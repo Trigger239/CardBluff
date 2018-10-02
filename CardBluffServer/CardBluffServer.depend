@@ -1,0 +1,346 @@
+# depslib dependency file v1.0
+1538509355 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\main.cpp
+	<windows.h>
+	<cstdlib>
+	<cstdio>
+	<unordered_set>
+	<winsock2.h>
+	<iostream>
+	<algorithm>
+	<queue>
+	"sqlite/sqlite3.h"
+	"sha256/sha256.h"
+	"client.h"
+	"game.h"
+	"database.h"
+	"util/strlcpy.h"
+	"util/unordered_set_mt.h"
+	"util/Rand64.h"
+	"common.h"
+
+1537778128 c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\sqlite\sqlite3.h
+	<stdarg.h>
+
+1534960337 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\mt_unordered_set.cpp
+
+1528156286 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\sqlite\sqlite3.c
+	"config.h"
+	<vxWorks.h>
+	<pthread.h>
+	"mingw.h"
+	"_mingw.h"
+	<stdarg.h>
+	<stdint.h>
+	<inttypes.h>
+	<intrin.h>
+	<cmnintrin.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<assert.h>
+	<stddef.h>
+	<TargetConditionals.h>
+	<ctype.h>
+	<time.h>
+	<sys/sysctl.h>
+	<malloc/malloc.h>
+	<libkern/OSAtomic.h>
+	<malloc.h>
+	<pthread.h>
+	"windows.h"
+	<sys/cygwin.h>
+	<errno.h>
+	<process.h>
+	<math.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<fcntl.h>
+	<sys/ioctl.h>
+	<unistd.h>
+	<sys/time.h>
+	<errno.h>
+	<sys/mman.h>
+	<sys/file.h>
+	<sys/param.h>
+	<semaphore.h>
+	<limits.h>
+	<sys/mount.h>
+	<utime.h>
+	<sys/dcmd_blk.h>
+	<sys/statvfs.h>
+	<dlfcn.h>
+	"sqlite_tcl.h"
+	"tcl.h"
+	"sqlite3rtree.h"
+	<unicode/utypes.h>
+	<unicode/uregex.h>
+	<unicode/ustring.h>
+	<unicode/ucol.h>
+	<unicode/ubrk.h>
+	<unicode/utf16.h>
+	<ctype.h>
+	<math.h>
+
+1528156286 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\sqlite\shell.c
+	<stdlib.h>
+	<string.h>
+	<stdio.h>
+	<assert.h>
+	"sqlite3.h"
+	"sqlite3userauth.h"
+	<ctype.h>
+	<stdarg.h>
+	<signal.h>
+	<pwd.h>
+	<unistd.h>
+	<dirent.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<readline/readline.h>
+	<readline/history.h>
+	<editline/readline.h>
+	"linenoise.h"
+	<io.h>
+	<fcntl.h>
+	<windows.h>
+	<sys/time.h>
+	<sys/resource.h>
+	"windows.h"
+	<stdio.h>
+	<stdlib.h>
+	<errno.h>
+	<io.h>
+	<limits.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<assert.h>
+	<string.h>
+	<stdarg.h>
+	<stdio.h>
+	<string.h>
+	<assert.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<fcntl.h>
+	<unistd.h>
+	<dirent.h>
+	<utime.h>
+	<sys/time.h>
+	"windows.h"
+	<io.h>
+	<direct.h>
+	<time.h>
+	<errno.h>
+	<assert.h>
+	<string.h>
+	<ctype.h>
+	<string.h>
+	<assert.h>
+	<stdio.h>
+	<string.h>
+	<assert.h>
+	<zlib.h>
+	<zlib.h>
+	<assert.h>
+	<string.h>
+	<stdio.h>
+
+1537899211 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\sha256\sha256.cpp
+	<cstring>
+	<fstream>
+	"sha256.h"
+
+1537899215 c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\sha256\sha256.h
+	<string>
+
+1538501736 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\client.cpp
+	"client.h"
+	"util/strlcpy.h"
+
+1538411819 c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\client.h
+	<windows.h>
+	<winsock.h>
+	<queue>
+	<string>
+	"common.h"
+	"game.h"
+
+1538327454 c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\util\strlcpy.h
+	<cstddef>
+
+1538327454 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\util\strlcpy.cpp
+	"strlcpy.h"
+
+1538329429 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\util\unordered_set_mt.cpp
+	"unordered_set_mt.h"
+
+1538330301 c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\util\unordered_set_mt.h
+	<unordered_set>
+	<windows.h>
+	<cstddef>
+
+1538416791 c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\common.h
+
+1538331420 c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\database.h
+	<string>
+	"sqlite/sqlite3.h"
+	"common.h"
+
+1538331420 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\database.cpp
+	"database.h"
+	<cstring>
+
+1538408183 c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\util\rand64.h
+	"tr1/random"
+
+1538340971 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\util\rand64.cpp
+	"Rand64.h"
+	<ctime>
+
+1538509417 c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\game.h
+	<windows.h>
+	<string>
+	"client.h"
+
+1538509355 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffserver\game.cpp
+	"game.h"
+	"common.h"
+
+1538501736 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\client.cpp
+	"client.h"
+	"util/strlcpy.h"
+
+1538411819 c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\client.h
+	<windows.h>
+	<winsock.h>
+	<queue>
+	<string>
+	"common.h"
+	"game.h"
+
+1538416791 c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\common.h
+
+1538509417 c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\game.h
+	<windows.h>
+	<string>
+	"client.h"
+
+1538327454 c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\util\strlcpy.h
+	<cstddef>
+
+1538331420 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\database.cpp
+	"database.h"
+	<cstring>
+
+1538331420 c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\database.h
+	<string>
+	"sqlite/sqlite3.h"
+	"common.h"
+
+1537778128 c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\sqlite\sqlite3.h
+	<stdarg.h>
+
+1538509538 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\game.cpp
+	"game.h"
+	"common.h"
+
+1538509355 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\main.cpp
+	<windows.h>
+	<cstdlib>
+	<cstdio>
+	<unordered_set>
+	<winsock2.h>
+	<iostream>
+	<algorithm>
+	<queue>
+	"sqlite/sqlite3.h"
+	"sha256/sha256.h"
+	"client.h"
+	"game.h"
+	"database.h"
+	"util/strlcpy.h"
+	"util/unordered_set_mt.h"
+	"util/Rand64.h"
+	"common.h"
+
+1537899215 c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\sha256\sha256.h
+	<string>
+
+1538330301 c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\util\unordered_set_mt.h
+	<unordered_set>
+	<windows.h>
+	<cstddef>
+
+1538408183 c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\util\rand64.h
+	"tr1/random"
+
+1537899211 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\sha256\sha256.cpp
+	<cstring>
+	<fstream>
+	"sha256.h"
+
+1528156286 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\sqlite\sqlite3.c
+	"config.h"
+	<vxWorks.h>
+	<pthread.h>
+	"mingw.h"
+	"_mingw.h"
+	<stdarg.h>
+	<stdint.h>
+	<inttypes.h>
+	<intrin.h>
+	<cmnintrin.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<assert.h>
+	<stddef.h>
+	<TargetConditionals.h>
+	<ctype.h>
+	<time.h>
+	<sys/sysctl.h>
+	<malloc/malloc.h>
+	<libkern/OSAtomic.h>
+	<malloc.h>
+	<pthread.h>
+	"windows.h"
+	<sys/cygwin.h>
+	<errno.h>
+	<process.h>
+	<math.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<fcntl.h>
+	<sys/ioctl.h>
+	<unistd.h>
+	<sys/time.h>
+	<errno.h>
+	<sys/mman.h>
+	<sys/file.h>
+	<sys/param.h>
+	<semaphore.h>
+	<limits.h>
+	<sys/mount.h>
+	<utime.h>
+	<sys/dcmd_blk.h>
+	<sys/statvfs.h>
+	<dlfcn.h>
+	"sqlite_tcl.h"
+	"tcl.h"
+	"sqlite3rtree.h"
+	<unicode/utypes.h>
+	<unicode/uregex.h>
+	<unicode/ustring.h>
+	<unicode/ucol.h>
+	<unicode/ubrk.h>
+	<unicode/utf16.h>
+	<ctype.h>
+	<math.h>
+
+1538340971 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\util\rand64.cpp
+	"Rand64.h"
+	<ctime>
+
+1538327454 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\util\strlcpy.cpp
+	"strlcpy.h"
+

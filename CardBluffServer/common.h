@@ -1,0 +1,14 @@
+#ifndef COMMON_H
+#define COMMON_H
+
+#define RECEIVE_BUFFER_SIZE 256
+#define SEND_BUFFER_SIZE 256
+
+#define MAX_CLIENTS 50
+
+#define PORT 2390
+
+#define DEFAULT_RATING 1200
+#define MOVE_TIMEOUT 60000
+
+#endif // COMMON_H

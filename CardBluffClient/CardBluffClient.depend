@@ -1,0 +1,19 @@
+# depslib dependency file v1.0
+1538245964 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffclient\main.cpp
+	<windows.h>
+	<winsock.h>
+	<cstdio>
+	<iostream>
+	<conio.h>
+	<signal.h>
+	<cstdio>
+	"sha256/sha256.h"
+
+1537899215 c:\users\arseniy\documents\кружок\cardbluff\cardbluffclient\sha256\sha256.h
+	<string>
+
+1537899211 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluffclient\sha256\sha256.cpp
+	<cstring>
+	<fstream>
+	"sha256.h"
+
