@@ -5,6 +5,6 @@
 #include <codecvt>
 #include <cwchar>
 
-extern std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+extern std::wstring_convert<std::codecvt_utf8<wchar_t, 0x10ffff, std::little_endian>, wchar_t> converter;
 
 #endif // UNICODE_H_INCLUDED
