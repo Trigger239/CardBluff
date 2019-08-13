@@ -1,6 +1,8 @@
 #include "client.h"
 
 #include "util/strlcpy.h"
+#include "util/unicode.h"
+#include <cstdio>
 
 int Client::wait_mutex(){
   return WaitForSingleObject(mutex, INFINITE);
@@ -26,7 +28,7 @@ T Client::get_var(T& var){
 }
 
 Client::Client(const SOCKET& socket,
-               const std::string& nickname,
+               const std::wstring& nickname,
                long long id)
   : socket(socket)
   , nickname(nickname)
@@ -47,7 +49,7 @@ Client::Client(const SOCKET& socket,
 Client::Client(const SOCKET& socket)
   : socket(socket)
   {
-    nickname = "";
+    nickname = L"";
     id = 0;
     mutex = CreateMutex(NULL, FALSE, NULL);
     send_queue_mutex = CreateMutex(NULL, FALSE, NULL);
@@ -162,7 +164,7 @@ int Client::send_data(const char* data, int data_size, bool* _terminate){
   return res;
 }
 
-void Client::push_string(std::string str, bool* _terminate){
+void Client::push_string(std::wstring str, bool* _terminate){
   if(_terminate == nullptr){
     WaitForSingleObject(send_queue_mutex, INFINITE);
     send_queue.push(str);
@@ -180,12 +182,12 @@ void Client::push_string(std::string str, bool* _terminate){
   ReleaseMutex(send_queue_mutex);
 }
 
-void Client::push_string(bool* _terminate, const char* format, ...){
+void Client::push_string(bool* _terminate, const wchar_t* format, ...){
   va_list va;
-  char c_str[1024];
-  std::string str;
+  wchar_t c_str[1024];
+  std::wstring str;
   va_start(va, format);
-  vsprintf(c_str, format, va);
+  vswprintf(c_str, format, va);
   va_end(va);
   str.assign(c_str);
   push_string(str, _terminate);
@@ -222,7 +224,7 @@ int Client::send_from_queue(bool* _terminate){
     }
 
     char send_buffer[SEND_BUFFER_SIZE];
-    strlcpy(send_buffer, send_queue.front().c_str(), SEND_BUFFER_SIZE);
+    strlcpy(send_buffer, converter.to_bytes(send_queue.front()).c_str(), SEND_BUFFER_SIZE);
 
     ret = send_data(send_buffer, SEND_BUFFER_SIZE, nullptr);
 
@@ -244,7 +246,7 @@ int Client::send_from_queue(bool* _terminate){
   }
 
   char send_buffer[SEND_BUFFER_SIZE];
-  strlcpy(send_buffer, send_queue.front().c_str(), SEND_BUFFER_SIZE);
+  strlcpy(send_buffer, converter.to_bytes(send_queue.front()).c_str(), SEND_BUFFER_SIZE);
 
   ret = send_data(send_buffer, SEND_BUFFER_SIZE, _terminate);
   if(ret != SOCKET_ERROR && !(*_terminate))
@@ -253,16 +255,16 @@ int Client::send_from_queue(bool* _terminate){
   return ret;
 }
 
-void Client::set_nickname(const std::string& _nickname){
+void Client::set_nickname(const std::wstring& _nickname){
   set_var(nickname, _nickname);
 }
 
-void Client::set_nickname(const char* _nickname){
-  std::string buf(_nickname);
+void Client::set_nickname(const wchar_t* _nickname){
+  std::wstring buf(_nickname);
   set_nickname(buf);
 }
 
-std::string Client::get_nickname(){
+std::wstring Client::get_nickname(){
   return get_var(nickname);
 }
 

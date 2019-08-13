@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <winsock2.h>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <queue>
 
@@ -17,15 +18,23 @@
 #include "util/Rand64.h"
 #include "common.h"
 
+#include <cstdio>
+
 using namespace std;
 
 HANDLE stdout_mutex;
+
+ofstream logfile("CardBluffServer.log");
 
 void log(const char* format, ...){
   va_list args;
   va_start(args, format);
   WaitForSingleObject(stdout_mutex, INFINITE);
+  char str[1000];
   vprintf(format, args);
+  vsprintf(str, format, args);
+  logfile << string(str);
+  logfile.flush();
   ReleaseMutex(stdout_mutex);
   va_end(args);
 }
@@ -69,12 +78,12 @@ void find_opponent() {
           client1->set_finding_duel(false);
           client2->set_finding_duel(false);
 
-          client1->push_string("SERVER: Your opponent is " + client2->get_nickname());
-          client2->push_string("SERVER: Your opponent is " + client1->get_nickname());
+          client1->push_string(L"SERVER: Your opponent is " + client2->get_nickname());
+          client2->push_string(L"SERVER: Your opponent is " + client1->get_nickname());
 
           Game* game = client1->enter_game(client2);
 
-          log("Duel found: %s VS %s\n", client1->get_nickname().c_str(), client2->get_nickname().c_str());
+          log("Duel found: %S VS %S\n", client1->get_nickname().c_str(), client2->get_nickname().c_str());
 
           clients.unlock();
 
@@ -89,7 +98,7 @@ void find_opponent() {
   clients.unlock();
 }
 
-Client* find_nickname_authorized(string& nickname){
+Client* find_nickname_authorized(wstring& nickname){
   clients.lock();
   for(auto it = clients.begin(); it != clients.end(); it++){
     if((*it)->get_nickname() == nickname && (*it)->get_authorized() && (!(*it)->get_waiting_reconnect())){
@@ -101,7 +110,7 @@ Client* find_nickname_authorized(string& nickname){
   return nullptr;
 }
 
-Client* find_nickname_waiting_reconnect(const string& nickname){
+Client* find_nickname_waiting_reconnect(const wstring& nickname){
   clients.lock();
   for(auto it = clients.begin(); it != clients.end(); it++){
     if((*it)->get_nickname() == nickname && (*it)->get_waiting_reconnect()){
@@ -162,7 +171,7 @@ void client_to_server_cleanup(Client* client, sqlite3* db){
     if(client->get_state() == WAIT_NICKNAME)
       log("New client: Receive thread terminated\n");
     else
-      log("New client '%s': Receive thread terminated\n", client->get_nickname().c_str());
+      log("New client '%S': Receive thread terminated\n", client->get_nickname().c_str());
   }
   else
     log("Client %I64d: Receive thread terminated\n", client->get_id());
@@ -180,7 +189,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
   int res;
   bool _terminate;
 
-  char receive_buffer[RECEIVE_BUFFER_SIZE];
+  char receive_buffer_raw[RECEIVE_BUFFER_SIZE];
 
   sqlite3* db;
   if(sqlite3_open("db.sl3", &db)){
@@ -191,18 +200,18 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
   Rand64 random;
   long long id_buffer;
-  string new_password;
+  wstring new_password;
   bool skip_processing;
 
   while(true){
-    res = client->receive_data(receive_buffer, RECEIVE_BUFFER_SIZE, &_terminate);
+    res = client->receive_data(receive_buffer_raw, RECEIVE_BUFFER_SIZE, &_terminate);
     skip_processing = false;
     if(_terminate || WaitForSingleObject(client->get_terminate_event(), 0) == WAIT_OBJECT_0){
       if(!client->get_authorized()){
         if(client->get_state() == WAIT_NICKNAME)
           log("New client: Receive thread terminated\n");
         else
-          log("New client '%s': Receive thread terminated\n", client->get_nickname().c_str());
+          log("New client '%S': Receive thread terminated\n", client->get_nickname().c_str());
       }
       else
         log("Client %I64d: Receive thread terminated\n", client->get_id());
@@ -215,7 +224,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
         if(client->get_state() == WAIT_NICKNAME)
           log("New client: Disconnected (receive thread)\n");
         else
-          log("New client '%s': Disconnected (receive thread)\n", client->get_nickname().c_str());
+          log("New client '%S': Disconnected (receive thread)\n", client->get_nickname().c_str());
         client_to_server_cleanup(client, db);
         return 0;
       }
@@ -237,36 +246,37 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
     if(!skip_processing){
       char* z_err_msg;
 
+      wstring receive_buffer = converter.from_bytes(receive_buffer);
+
       switch(client->get_state()){
       case WAIT_NICKNAME:
-        if(strncmp(receive_buffer, "nickname:", 9) == 0){
-          log("New client: Nickname message received: '%s'\n", receive_buffer + 9);
-          string nick;
-          nick.assign(receive_buffer + 9);
+        if(wcsncmp(receive_buffer.c_str(), L"nickname:", 9) == 0){
+          log("New client: Nickname message received: '%S'\n", receive_buffer.c_str() + 9);
+          wstring nick;
+          nick.assign(receive_buffer.c_str() + 9);
           if(find_nickname_authorized(nick) != nullptr){
-            log("New client: Client with nickname '%s' already authorized\n", nick.c_str());
+            log("New client: Client with nickname '%S' already authorized\n", nick.c_str());
             client_to_server_cleanup(client, db);
             return 0;
           }
           client->set_nickname(nick);
           bool exists;
           if(db_get_id_by_nickname(db, client->get_nickname(), &exists, &id_buffer, &z_err_msg)){
-            log("New client '%s': Error getting id from database. SQLite error: %s\n",
+            log("New client '%S': Error getting id from database. SQLite error: %s\n",
                 client->get_nickname().c_str(), z_err_msg);
             sqlite3_free(z_err_msg);
             client_to_server_cleanup(client, db);
             return 0;
           }
           if(exists){
-            client->push_string(&_terminate, "SERVER: Please enter password.",
-                                client->get_nickname().c_str());
+            client->push_string(&_terminate, L"SERVER: Please enter password.");
             if(_terminate){
               sqlite3_close(db);
               return 0;
             }
 
             unsigned long long salt_num = random.generate();
-            client->push_string(&_terminate, "password?%08x%08x",
+            client->push_string(&_terminate, L"password?%08x%08x",
                                 (unsigned int) (salt_num >> 32), (unsigned int) (salt_num & 0xFFFFFFFF));
             if(_terminate){
               sqlite3_close(db);
@@ -472,7 +482,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             return 0;
           }
         }
-        else if(strcmp(receive_buffer, "/find_duel") == 0){
+        else if(strcmp(receive_buffer, "/findduel") == 0){
           client->set_finding_duel(true);
           client->push_string(&_terminate, "SERVER: Finding opponent for you...");
           if(_terminate){
@@ -540,6 +550,7 @@ DWORD WINAPI find_duel_thread(LPVOID lpParam){
 int main()
 {
   char* z_err_msg;
+  setlocale(LC_ALL, "ru_RU.utf8");
 
   if(!sqlite3_threadsafe()){
     log("Current SQLite version is not thread safe.\n");

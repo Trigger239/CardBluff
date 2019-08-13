@@ -32,6 +32,9 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Linker>
+			<Add option="-lws2_32" />
+		</Linker>
 		<Unit filename="main.cpp" />
 		<Unit filename="sha256/sha256.cpp" />
 		<Extensions>

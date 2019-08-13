@@ -528,6 +528,9 @@ DWORD WINAPI server_to_client(LPVOID lpParam){
 
 int main()
 {
+
+  setlocale(LC_ALL, "ru_RU.utf8");
+
   HANDLE stdout_handle = GetStdHandle(STD_OUTPUT_HANDLE);
   HANDLE stdin_handle = GetStdHandle(STD_INPUT_HANDLE);
 

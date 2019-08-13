@@ -30,8 +30,13 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-std=c++14" />
 			<Add option="-fexceptions" />
+			<Add option="-U__STRICT_ANSI__" />
 		</Compiler>
+		<Linker>
+			<Add option="-lws2_32" />
+		</Linker>
 		<Unit filename="client.cpp" />
 		<Unit filename="client.h" />
 		<Unit filename="common.h" />
@@ -48,7 +53,11 @@
 		<Unit filename="util/Rand64.h" />
 		<Unit filename="util/strlcpy.cpp" />
 		<Unit filename="util/strlcpy.h" />
+		<Unit filename="util/unicode.cpp" />
+		<Unit filename="util/unicode.h" />
 		<Unit filename="util/unordered_set_mt.h" />
+		<Unit filename="util/util.cpp" />
+		<Unit filename="util/util.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

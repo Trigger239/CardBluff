@@ -7,6 +7,7 @@
 #include <string>
 #include "common.h"
 #include "game.h"
+
 class Game;
 
 enum ClientState{
@@ -23,7 +24,7 @@ class Client{
 public:
 
   Client(const SOCKET& socket,
-         const std::string& nickname,
+         const std::wstring& nickname,
          long long id);
   Client(const SOCKET& socket);
   ~Client();
@@ -44,9 +45,9 @@ public:
   void set_socket(SOCKET _socket);
   SOCKET get_socket();
 
-  void set_nickname(const std::string& _nickname);
-  void set_nickname(const char* _nickname);
-  std::string get_nickname();
+  void set_nickname(const std::wstring& _nickname);
+  void set_nickname(const wchar_t* _nickname);
+  std::wstring get_nickname();
 
   void set_id(long long _id);
   long long get_id();
@@ -74,8 +75,8 @@ public:
   int receive_data(char* data, int data_size, bool* _terminate = nullptr);
   int send_data(const char* data, int data_size, bool* _terminate = nullptr);
 
-  void push_string(std::string str, bool* _terminate = nullptr);
-  void push_string(bool* _terminate, const char* format, ...);
+  void push_string(std::wstring str, bool* _terminate = nullptr);
+  void push_string(bool* _terminate, const wchar_t* format, ...);
   bool queue_is_empty(bool* _terminate = nullptr);
   int send_from_queue(bool* _terminate = nullptr);
   void copy_strings(Client* dest_client, bool* _terminate = nullptr);
@@ -91,9 +92,9 @@ private:
   HANDLE terminate_event;
   SOCKET socket;
   HANDLE send_queue_mutex;
-  std::queue<std::string> send_queue;
+  std::queue<std::wstring> send_queue;
 
-  std::string nickname;
+  std::wstring nickname;
   long long id;
   ClientState state;
   Game* game;
