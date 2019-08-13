@@ -489,7 +489,7 @@ DWORD WINAPI server_to_client(LPVOID lpParam){
 
     if(wcscmp(receive_buffer.c_str(), L"") != 0){
       if(WaitForSingleObject(authorized_event, 0) == WAIT_OBJECT_0){
-        wprintf_mt(L"> %S\n", receive_buffer.c_str());
+        wprintf_mt(L"> %ls\n", receive_buffer.c_str());
       }
       else{
         if(wcscmp(receive_buffer.c_str(), L"password_first?") == 0){
@@ -514,7 +514,7 @@ DWORD WINAPI server_to_client(LPVOID lpParam){
           SetEvent(auth_fail_event);
         }
         else
-          wprintf_mt(L"> %S\n", receive_buffer);
+          wprintf_mt(L"> %ls\n", receive_buffer.c_str());
       }
     }
   }
@@ -612,7 +612,7 @@ int main()
   char buf_raw[SEND_BUFFER_SIZE];
   strlcpy(buf_raw, converter.to_bytes(nickname).c_str(), SEND_BUFFER_SIZE);
 
-  printf_mt("nick: %S\n", nickname.c_str());
+  printf_mt("nick: %ls\n", nickname.c_str());
   printf_mt("raw: %s\n", buf_raw);
 
   send(sock, buf_raw, sizeof(buf_raw), 0);

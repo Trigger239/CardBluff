@@ -55,7 +55,7 @@
 1565710179 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\util\strlcpy.h
 	<cstddef>
 
-1565705753 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\util\unicode.h
+1565727958 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\util\unicode.h
 	<locale>
 	<codecvt>
 	<cwchar>
@@ -65,7 +65,7 @@
 	<fstream>
 	"sha256.h"
 
-1565705753 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\util\unicode.cpp
+1565727958 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\util\unicode.cpp
 	"unicode.h"
 
 1565710874 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\util\strlcpy.cpp

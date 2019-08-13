@@ -84,7 +84,7 @@ void find_opponent() {
 
           Game* game = client1->enter_game(client2);
 
-          log("Duel found: %S VS %S\n", client1->get_nickname().c_str(), client2->get_nickname().c_str());
+          log("Duel found: %ls VS %ls\n", client1->get_nickname().c_str(), client2->get_nickname().c_str());
 
           clients.unlock();
 
@@ -172,7 +172,7 @@ void client_to_server_cleanup(Client* client, sqlite3* db){
     if(client->get_state() == WAIT_NICKNAME)
       log("New client: Receive thread terminated\n");
     else
-      log("New client '%S': Receive thread terminated\n", client->get_nickname().c_str());
+      log("New client '%ls': Receive thread terminated\n", client->get_nickname().c_str());
   }
   else
     log("Client %I64d: Receive thread terminated\n", client->get_id());
@@ -212,7 +212,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
         if(client->get_state() == WAIT_NICKNAME)
           log("New client: Receive thread terminated\n");
         else
-          log("New client '%S': Receive thread terminated\n", client->get_nickname().c_str());
+          log("New client '%ls': Receive thread terminated\n", client->get_nickname().c_str());
       }
       else
         log("Client %I64d: Receive thread terminated\n", client->get_id());
@@ -225,7 +225,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
         if(client->get_state() == WAIT_NICKNAME)
           log("New client: Disconnected (receive thread)\n");
         else
-          log("New client '%S': Disconnected (receive thread)\n", client->get_nickname().c_str());
+          log("New client '%ls': Disconnected (receive thread)\n", client->get_nickname().c_str());
         client_to_server_cleanup(client, db);
         return 0;
       }
@@ -259,18 +259,18 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       switch(client->get_state()){
       case WAIT_NICKNAME:
         if(wcsncmp(receive_buffer.c_str(), L"nickname:", 9) == 0){
-          log("New client: Nickname message received: '%S'\n", receive_buffer.c_str() + 9);
+          log("New client: Nickname message received: '%ls'\n", receive_buffer.c_str() + 9);
           wstring nick;
           nick.assign(receive_buffer.c_str() + 9);
           if(find_nickname_authorized(nick) != nullptr){
-            log("New client: Client with nickname '%S' already authorized\n", nick.c_str());
+            log("New client: Client with nickname '%ls' already authorized\n", nick.c_str());
             client_to_server_cleanup(client, db);
             return 0;
           }
           client->set_nickname(nick);
           bool exists;
           if(db_get_id_by_nickname(db, client->get_nickname(), &exists, &id_buffer, &z_err_msg)){
-            log("New client '%S': Error getting id from database. SQLite error: %s\n",
+            log("New client '%ls': Error getting id from database. SQLite error: %s\n",
                 client->get_nickname().c_str(), z_err_msg);
             sqlite3_free(z_err_msg);
             client_to_server_cleanup(client, db);
@@ -294,7 +294,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             client->set_state(WAIT_PASSWORD);
           }
           else{
-            client->push_string(&_terminate, L"SERVER: You are a new user, %S. Please enter your password to register.",
+            client->push_string(&_terminate, L"SERVER: You are a new user, %ls. Please enter your password to register.",
                                 client->get_nickname().c_str());
             if(_terminate){
               sqlite3_close(db);
@@ -314,7 +314,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
       case WAIT_PASSWORD_REGISTER_FIRST:
         if(wcsncmp(receive_buffer.c_str(), L"password_first:", 15) == 0){
-          log("New client '%S': First register password message received: '%S'\n",
+          log("New client '%ls': First register password message received: '%ls'\n",
               client->get_nickname().c_str(), receive_buffer.c_str() + 15);
           new_password.assign(receive_buffer.c_str() + 15);
           client->push_string(&_terminate, L"SERVER: Please re-enter your password.");
@@ -332,12 +332,12 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
           client->set_state(WAIT_PASSWORD_REGISTER_SECOND);
         }
         else
-          log("New client '%S': Wrong first register password message received\n", client->get_nickname().c_str());
+          log("New client '%ls': Wrong first register password message received\n", client->get_nickname().c_str());
         break;
 
       case WAIT_PASSWORD_REGISTER_SECOND:
         if(wcsncmp(receive_buffer.c_str(), L"password_second:", 16) == 0){
-          log("New client '%S': Second register password message received: '%S'\n",
+          log("New client '%ls': Second register password message received: '%ls'\n",
               client->get_nickname().c_str(), receive_buffer.c_str() + 16);
           wstring pass;
 
@@ -348,9 +348,9 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
           pass = converter.from_bytes(sha256(converter.to_bytes(pass)));
 
           if(wcscmp(pass.c_str(), receive_buffer.c_str() + 16) == 0){
-            log("New client '%S': Second register password OK\n", client->get_nickname().c_str());
+            log("New client '%ls': Second register password OK\n", client->get_nickname().c_str());
             if(db_add_client(db, client->get_nickname(), new_password, &z_err_msg)){
-              log("New client '%S': Error adding client to database. SQLite error: %s\n",
+              log("New client '%ls': Error adding client to database. SQLite error: %s\n",
                   client->get_nickname().c_str(), z_err_msg);
               sqlite3_free(z_err_msg);
               client_to_server_cleanup(client, db);
@@ -372,14 +372,14 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
             bool exists;
             if(db_get_id_by_nickname(db, client->get_nickname(), &exists, &id_buffer, &z_err_msg)){
-              log("New client '%S': Error getting id from database. SQLite error: %s\n",
+              log("New client '%ls': Error getting id from database. SQLite error: %s\n",
                   client->get_nickname().c_str(), z_err_msg);
               sqlite3_free(z_err_msg);
               client_to_server_cleanup(client, db);
               return 0;
             }
             if(!exists){
-              log("New client '%S': Newly registered client not found in database\n");
+              log("New client '%ls': Newly registered client not found in database\n");
               client_to_server_cleanup(client, db);
               return 0;
             }
@@ -387,7 +387,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             client->set_state(WAIT_ENTER_GAME);
           }
           else{
-            log("New client '%S': Wrong password\n", client->get_nickname().c_str());
+            log("New client '%ls': Wrong password\n", client->get_nickname().c_str());
             client->push_string(L"auth_fail!", &_terminate);
             if(_terminate){
               sqlite3_close(db);
@@ -399,33 +399,33 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
           }
         }
         else
-          log("New client '%S': Wrong password message received\n", client->get_nickname().c_str());
+          log("New client '%ls': Wrong password message received\n", client->get_nickname().c_str());
         break;
 
       case WAIT_PASSWORD:
         if(wcsncmp(receive_buffer.c_str(), L"password:", 9) == 0){
-          log("New client '%S': Password message received: '%S'\n",
+          log("New client '%ls': Password message received: '%ls'\n",
               client->get_nickname().c_str(), receive_buffer.c_str() + 9);
           wstring pass;
           if(db_get_password(db, id_buffer, &pass, &z_err_msg)){
-            log("New client '%S': Error getting password from database. SQLite error: %s\n",
+            log("New client '%ls': Error getting password from database. SQLite error: %s\n",
                 client->get_nickname().c_str(), z_err_msg);
             sqlite3_free(z_err_msg);
             client_to_server_cleanup(client, db);
             return 0;
           }
 
-          log("Pass from database: '%S'\n", pass.c_str());
+          log("Pass from database: '%ls'\n", pass.c_str());
 
           wchar_t salt[17];
           unsigned long long salt_num = random.get_last();
           swprintf(salt, L"%08x%08x", (unsigned int) (salt_num >> 32), (unsigned int) (salt_num & 0xFFFFFFFF));
           pass += wstring(salt);
           pass = converter.from_bytes(sha256(converter.to_bytes(pass)));
-          log("Waiting pass: '%S' (salt '%S')\n", pass.c_str(), salt);
+          log("Waiting pass: '%ls' (salt '%ls')\n", pass.c_str(), salt);
 
           if(wcscmp(pass.c_str(), receive_buffer.c_str() + 9) == 0){
-            log("New client '%S': Password OK\n", client->get_nickname().c_str());
+            log("New client '%ls': Password OK\n", client->get_nickname().c_str());
 
             client->push_string(L"auth_ok!", &_terminate);
             if(_terminate){
@@ -442,7 +442,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
             Client* old_client = find_nickname_waiting_reconnect(client->get_nickname());
             if(old_client != nullptr){
-              log("New client '%S': Reconnected client %I64d\n", client->get_nickname().c_str(), old_client->get_id());
+              log("New client '%ls': Reconnected client %I64d\n", client->get_nickname().c_str(), old_client->get_id());
               SetEvent(client->get_terminate_event());
               WaitForSingleObject(client->get_send_thread(), INFINITE);
               ResetEvent(client->get_terminate_event());
@@ -452,7 +452,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
               SetEvent(old_client->get_reconnect_event());
               old_client->set_waiting_reconnect(false);
 
-              log("New client '%S': Receive thread terminated\n", client->get_nickname().c_str());
+              log("New client '%ls': Receive thread terminated\n", client->get_nickname().c_str());
 
               clients.erase(client);
               delete client;
@@ -466,7 +466,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             client->set_state(WAIT_ENTER_GAME);
           }
           else{
-            log("New client '%S': Wrong password\n", client->get_nickname().c_str());
+            log("New client '%ls': Wrong password\n", client->get_nickname().c_str());
             client->push_string(L"auth_fail!", &_terminate);
             if(_terminate){
               sqlite3_close(db);
@@ -477,7 +477,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
           }
         }
         else
-          log("New client '%S': Wrong password message received\n", client->get_nickname().c_str());
+          log("New client '%ls': Wrong password message received\n", client->get_nickname().c_str());
         break;
 
       case WAIT_ENTER_GAME:
@@ -514,7 +514,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
       case IN_GAME:
         if(wcsncmp(receive_buffer.c_str(), L"/", 1) != 0){ //not a command
-          client->get_opponent()->push_string(&_terminate, L"%S: %S", client->get_nickname().c_str(), receive_buffer.c_str());
+          client->get_opponent()->push_string(&_terminate, L"%ls: %ls", client->get_nickname().c_str(), receive_buffer.c_str());
           if(_terminate){
             log("Client %I64d: Receive thread terminated\n", client->get_id());
             sqlite3_close(db);
