@@ -509,3 +509,171 @@
 	<codecvt>
 	<cwchar>
 
+1565715341 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\client.cpp
+	"client.h"
+	"util/strlcpy.h"
+	"util/unicode.h"
+	<cstdio>
+
+1565715341 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\client.h
+	<windows.h>
+	<winsock.h>
+	<queue>
+	<string>
+	"common.h"
+	"game.h"
+
+1565715340 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\common.h
+	"util/util.h"
+
+1565715340 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\util.h
+	<string>
+
+1565715340 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\game.h
+	<windows.h>
+	<string>
+	<vector>
+	<inttypes.h>
+	<random>
+	<chrono>
+	<iterator>
+	<algorithm>
+	"client.h"
+
+1565684566 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\strlcpy.h
+	<cstddef>
+
+1565721124 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\unicode.h
+	<locale>
+	<codecvt>
+	<cwchar>
+
+1565715340 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\database.cpp
+	"database.h"
+	<cstring>
+	"util/unicode.h"
+
+1565715340 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\database.h
+	<string>
+	"sqlite/sqlite3.h"
+	"common.h"
+
+1565684566 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\sqlite\sqlite3.h
+	<stdarg.h>
+
+1565715341 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\game.cpp
+	"game.h"
+	"common.h"
+	<cstdio>
+
+1565684565 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\sha256\sha256.cpp
+	<cstring>
+	<fstream>
+	"sha256.h"
+
+1565684565 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\sha256\sha256.h
+	<string>
+
+1565684566 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\sqlite\sqlite3.c
+	"config.h"
+	<vxWorks.h>
+	<pthread.h>
+	"mingw.h"
+	"_mingw.h"
+	<stdarg.h>
+	<stdint.h>
+	<inttypes.h>
+	<intrin.h>
+	<cmnintrin.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<assert.h>
+	<stddef.h>
+	<TargetConditionals.h>
+	<ctype.h>
+	<time.h>
+	<sys/sysctl.h>
+	<malloc/malloc.h>
+	<libkern/OSAtomic.h>
+	<malloc.h>
+	<pthread.h>
+	"windows.h"
+	<sys/cygwin.h>
+	<errno.h>
+	<process.h>
+	<math.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<fcntl.h>
+	<sys/ioctl.h>
+	<unistd.h>
+	<sys/time.h>
+	<errno.h>
+	<sys/mman.h>
+	<sys/file.h>
+	<sys/param.h>
+	<semaphore.h>
+	<limits.h>
+	<sys/mount.h>
+	<utime.h>
+	<sys/dcmd_blk.h>
+	<sys/statvfs.h>
+	<dlfcn.h>
+	"sqlite_tcl.h"
+	"tcl.h"
+	"sqlite3rtree.h"
+	<unicode/utypes.h>
+	<unicode/uregex.h>
+	<unicode/ustring.h>
+	<unicode/ucol.h>
+	<unicode/ubrk.h>
+	<unicode/utf16.h>
+	<ctype.h>
+	<math.h>
+
+1565684566 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\rand64.cpp
+	"Rand64.h"
+	<ctime>
+
+1565684566 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\rand64.h
+	"tr1/random"
+
+1565684566 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\strlcpy.cpp
+	"strlcpy.h"
+
+1565720932 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\unicode.cpp
+	"unicode.h"
+
+1565715340 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\util.cpp
+	"util.h"
+	<algorithm>
+	"unicode.h"
+
+1565720913 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\main.cpp
+	<windows.h>
+	<cstdlib>
+	<cstdio>
+	<unordered_set>
+	<winsock2.h>
+	<iostream>
+	<fstream>
+	<algorithm>
+	<queue>
+	"sqlite/sqlite3.h"
+	"sha256/sha256.h"
+	"client.h"
+	"game.h"
+	"database.h"
+	"util/strlcpy.h"
+	"util/unordered_set_mt.h"
+	"util/Rand64.h"
+	"common.h"
+	"util/unicode.h"
+	<cstdio>
+
+1565684566 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\unordered_set_mt.h
+	<unordered_set>
+	<windows.h>
+	<cstddef>
+

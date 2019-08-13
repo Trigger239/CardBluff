@@ -1,12 +1,14 @@
 #include "database.h"
 #include <cstring>
 
-int db_add_client(sqlite3* db, const std::string& nickname,
-                  const std::string& password, char** z_err_msg){
+#include "util/unicode.h"
+
+int db_add_client(sqlite3* db, const std::wstring& nickname,
+                  const std::wstring& password, char** z_err_msg){
   char cmd[256];
   sprintf(cmd, "INSERT INTO clients (nickname, password, rating) "
                "VALUES ('%s', '%s', %I64d);",
-          nickname.c_str(), password.c_str(), (long long) DEFAULT_RATING);
+          converter.to_bytes(nickname).c_str(), converter.to_bytes(password).c_str(), (long long) DEFAULT_RATING);
   return sqlite3_exec(db, cmd, NULL, 0, z_err_msg);
 }
 
@@ -26,11 +28,11 @@ int db_get_id_by_nickname_cb(void* args, int columns,
   return 0;
 }
 
-int db_get_id_by_nickname(sqlite3* db, const std::string& nickname,
+int db_get_id_by_nickname(sqlite3* db, const std::wstring& nickname,
                           bool* exists, long long* id, char** z_err_msg){
   char cmd[256];
   sprintf(cmd, "SELECT id FROM clients WHERE nickname='%s';",
-          nickname.c_str());
+          converter.to_bytes(nickname).c_str());
   *exists = false;
   db_get_id_by_nickname_args args = {id, exists};
   return sqlite3_exec(db, cmd, db_get_id_by_nickname_cb, &args, z_err_msg);
@@ -43,22 +45,22 @@ int db_get_password_cb(void* password, int columns,
      (values == NULL) || (values[0] == NULL))
     return -1;
   //log("Pass from DB: '%s'", values[0]);
-  ((std::string*) password)->assign(values[0]);
+  *((std::wstring*) password) = converter.from_bytes(values[0]);
   return 0;
 }
 
-int db_get_password(sqlite3* db, long long id, std::string* password,
+int db_get_password(sqlite3* db, long long id, std::wstring* password,
                     char** z_err_msg){
   char cmd[256];
   sprintf(cmd, "SELECT password FROM clients WHERE id=%I64d;", id);
   return sqlite3_exec(db, cmd, db_get_password_cb, password, z_err_msg);
 }
 
-int db_set_password(sqlite3*db, long long id, const std::string& password,
+int db_set_password(sqlite3*db, long long id, const std::wstring& password,
                     char** z_err_msg){
   char cmd[256];
   sprintf(cmd, "UPDATE clients SET password='%s' WHERE id=%I64d;",
-          password.c_str(), id);
+          converter.to_bytes(password).c_str(), id);
   return sqlite3_exec(db, cmd, NULL, nullptr, z_err_msg);
 }
 

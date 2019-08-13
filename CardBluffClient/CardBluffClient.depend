@@ -38,3 +38,36 @@
 1565549813 d:\cardbluff\cardbluff\cardbluffclient\util\strlcpy.h
 	<cstddef>
 
+1565711083 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\main.cpp
+	<windows.h>
+	<winsock.h>
+	<iostream>
+	<conio.h>
+	<signal.h>
+	<cstdio>
+	"sha256/sha256.h"
+	"util/strlcpy.h"
+	"util/unicode.h"
+
+1565684565 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\sha256\sha256.h
+	<string>
+
+1565710179 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\util\strlcpy.h
+	<cstddef>
+
+1565705753 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\util\unicode.h
+	<locale>
+	<codecvt>
+	<cwchar>
+
+1565684565 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\sha256\sha256.cpp
+	<cstring>
+	<fstream>
+	"sha256.h"
+
+1565705753 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\util\unicode.cpp
+	"unicode.h"
+
+1565710874 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\util\strlcpy.cpp
+	"strlcpy.h"
+

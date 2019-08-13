@@ -6,6 +6,7 @@
 #include <cstdio>
 #include "sha256/sha256.h"
 #include "util/strlcpy.h"
+#include "util/unicode.h"
 
 using namespace std;
 
@@ -19,36 +20,6 @@ using namespace std;
 #define SEND_BUFFER_SIZE 256
 
 #define PORT 2390
-
-/*
- * Copy string src to buffer dst of size dsize.  At most dsize-1
- * chars will be copied.  Always NUL _terminates (unless dsize == 0).
- * Returns strlen(src); if retval >= dsize, truncation occurred.
- */
-size_t
-strlcpy(char *dst, const char *src, size_t dsize)
-{
-	const char *osrc = src;
-	size_t nleft = dsize;
-
-	/* Copy as many bytes as will fit. */
-	if (nleft != 0) {
-		while (--nleft != 0) {
-			if ((*dst++ = *src++) == '\0')
-				break;
-		}
-	}
-
-	/* Not enough room in dst, add NUL and traverse rest of src. */
-	if (nleft == 0) {
-		if (dsize != 0)
-			*dst = '\0';		/* NUL-_terminate dst */
-		while (*src++)
-			;
-	}
-
-	return(src - osrc - 1);	/* count does not include NUL */
-}
 
 enum state_t{
   ENTER_NICKNAME,
@@ -80,21 +51,30 @@ void printf_mt(const char* format, ...){
   va_end(args);
 }
 
+void wprintf_mt(const wchar_t* format, ...){
+  va_list args;
+  va_start(args, format);
+  WaitForSingleObject(stdout_mutex, INFINITE);
+  vwprintf(format, args);
+  ReleaseMutex(stdout_mutex);
+  va_end(args);
+}
+
 //if c == 0, then this function checks for any char in the buffer
 //if c != 0, it checks for c in the buffer
 //returns true on success, false on error
 bool console_has_char_in_input_buffer(HANDLE stdin_handle,
-                                      bool* result, char c = 0){
+                                      bool* result, wchar_t c = 0){
   DWORD number_of_input_events;
   INPUT_RECORD events[1024];
 
-  if(!PeekConsoleInput(stdin_handle, events, 1024, &number_of_input_events)){
+  if(!PeekConsoleInputW(stdin_handle, events, 1024, &number_of_input_events)){
     return false;
   };
   for(unsigned int i = 0; i < number_of_input_events; i++){
     if(events[i].EventType == KEY_EVENT){
       if(events[i].Event.KeyEvent.bKeyDown == true &&
-        (c == 0 || events[i].Event.KeyEvent.uChar.AsciiChar == c)){
+        (c == 0 || events[i].Event.KeyEvent.uChar.UnicodeChar == c)){
         *result = true;
         return true;
       }
@@ -113,8 +93,17 @@ void scanf_mt(const char* format, ...){
   va_end(args);
 }
 
+void wscanf_mt(const wchar_t* format, ...){
+  va_list args;
+  va_start(args, format);
+  WaitForSingleObject(stdin_mutex, INFINITE);
+  vwscanf(format, args);
+  ReleaseMutex(stdin_mutex);
+  va_end(args);
+}
+
 //returns true on success, false on error
-bool cin_getline_mt(char* s, unsigned int n,
+bool cin_getline_mt(wchar_t* s, unsigned int n,
                     HANDLE stdin_handle = INVALID_HANDLE_VALUE,
                     HANDLE stdout_handle = INVALID_HANDLE_VALUE,
                     HANDLE terminate_event = INVALID_HANDLE_VALUE,
@@ -124,7 +113,7 @@ bool cin_getline_mt(char* s, unsigned int n,
      terminate_event == INVALID_HANDLE_VALUE ||
      _terminate == nullptr){
     WaitForSingleObject(stdin_mutex, INFINITE);
-    cin.getline(s, n);
+    wcin.getline(s, n);
     ReleaseMutex(stdin_mutex);
     return true;
   }
@@ -140,7 +129,7 @@ bool cin_getline_mt(char* s, unsigned int n,
     return false;
   }
 
-  string buf;
+  wstring buf;
   while(true){
     bool char_available;
     DWORD count;
@@ -157,7 +146,7 @@ bool cin_getline_mt(char* s, unsigned int n,
     }
 
     if(char_available){
-      getline(cin, buf);
+      getline(wcin, buf);
       break;
     }
     else
@@ -166,14 +155,14 @@ bool cin_getline_mt(char* s, unsigned int n,
 
   ReleaseMutex(stdin_mutex);
 
-  strlcpy(s, buf.c_str(), n);
+  wcslcpy(s, buf.c_str(), n);
   return true;
 }
 
 //returns true on success, false on error
 bool get_password(HANDLE stdin_handle,
                   HANDLE stdout_handle,
-                  string* result,
+                  wstring* result,
                   HANDLE terminate_event = INVALID_HANDLE_VALUE,
                   bool* _terminate = nullptr){
   // Set the console mode to no-echo, not-line-buffered input
@@ -185,9 +174,9 @@ bool get_password(HANDLE stdin_handle,
                                             ENABLE_PROCESSED_INPUT)))
     return false;
 
-  char c;
+  wchar_t c;
   bool char_available;
-  string res;
+  wstring res;
   DWORD count;
 
   if(_terminate != nullptr)
@@ -195,32 +184,32 @@ bool get_password(HANDLE stdin_handle,
 
   while(true){
     if(!console_has_char_in_input_buffer(stdin_handle, &char_available)){
-      WriteConsoleA(stdout_handle, "\n", 1, &count, NULL);
+      WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
       SetConsoleMode(stdin_handle, mode);
       return false;
     }
 
     if(terminate_event != INVALID_HANDLE_VALUE && _terminate != nullptr)
       if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-        WriteConsoleA(stdout_handle, "\n", 1, &count, NULL);
+        WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
         SetConsoleMode(stdin_handle, mode);
         *_terminate = true;
         return true;
       }
 
     if(char_available){
-      if(!ReadConsoleA(stdin_handle, &c, 1, &count, NULL)){
-        WriteConsoleA(stdout_handle, "\n", 1, &count, NULL);
+      if(!ReadConsoleW(stdin_handle, &c, 1, &count, NULL)){
+        WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
         SetConsoleMode(stdin_handle, mode);
         return false;
       }
       if(count != 0){
-        if((c == '\r') || (c == '\n'))
+        if((c == L'\r') || (c == L'\n'))
           break;
-        if(c == '\b'){
+        if(c == L'\b'){
           if(res.length()){
-            if(!WriteConsoleA(stdout_handle, "\b \b", 3, &count, NULL)){
-              WriteConsoleA(stdout_handle, "\n", 1, &count, NULL);
+            if(!WriteConsoleW(stdout_handle, L"\b \b", 3, &count, NULL)){
+              WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
               SetConsoleMode(stdin_handle, mode);
               return false;
             }
@@ -228,8 +217,8 @@ bool get_password(HANDLE stdin_handle,
           }
         }
         else{
-          if(!WriteConsoleA(stdout_handle, "*", 1, &count, NULL)){
-            WriteConsoleA(stdout_handle, "\n", 1, &count, NULL);
+          if(!WriteConsoleW(stdout_handle, L"*", 1, &count, NULL)){
+            WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
             SetConsoleMode(stdin_handle, mode);
             return false;
           }
@@ -241,7 +230,7 @@ bool get_password(HANDLE stdin_handle,
       Sleep(10);
   }
 
-  WriteConsoleA(stdout_handle, "\n", 1, &count, NULL);
+  WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
   SetConsoleMode(stdin_handle, mode);
 
   *result = res;
@@ -308,23 +297,23 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
     auth_fail_event
   };
 
-  char input_buffer[256];
-  char send_buffer[SEND_BUFFER_SIZE];
+  wchar_t input_buffer[256];
+  wchar_t send_buffer[SEND_BUFFER_SIZE];
   int res;
   bool should_send;
-  char salt_str[17];
+  wchar_t salt_str[17];
 
   bool _terminate = false;
-  string pass;
+  wstring pass;
 
-  printf_mt("Send thread started.\n");
+  wprintf_mt(L"Send thread started.\n");
 
   while(true){
     should_send = true;
     switch(WaitForMultipleObjects(sizeof(events) / sizeof(HANDLE),
                                   events, FALSE, INFINITE)){
     case WAIT_OBJECT_0 + 0: //terminate
-      printf_mt("Send thread terminated.\n");
+      wprintf_mt(L"Send thread terminated.\n");
       return 0;
       break;
 
@@ -332,17 +321,17 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       if(!cin_getline_mt(input_buffer, 256, stdin_handle, stdout_handle,
                          terminate_event, &_terminate) || _terminate){
         if(!_terminate)
-          printf_mt("Error reading nickname from console.\n");
+          wprintf_mt(L"Error reading nickname from console.\n");
         if(WaitForSingleObject(terminate_event, 0) != WAIT_OBJECT_0){
           SetEvent(terminate_event);
           WaitForSingleObject(thread_handles_ready_event, INFINITE);
           WaitForSingleObject(params->receive_thread, INFINITE);
         }
-        printf_mt("Send thread terminated.\n");
+        wprintf_mt(L"Send thread terminated.\n");
         return 0;
       }
-      strcpy(send_buffer, "nickname:");
-      strcat(send_buffer, input_buffer);
+      wcscpy(send_buffer, L"nickname:");
+      wcscat(send_buffer, input_buffer);
       ResetEvent(nickname_request_event);
       break;
 
@@ -350,18 +339,18 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       if(!get_password(stdin_handle, stdout_handle, &pass,
                        terminate_event, &_terminate) || _terminate){
         if(!_terminate)
-          printf_mt("Error reading password from console.\n");
+          wprintf_mt(L"Error reading password from console.\n");
         if(WaitForSingleObject(terminate_event, 0) != WAIT_OBJECT_0){
           SetEvent(terminate_event);
           WaitForSingleObject(thread_handles_ready_event, INFINITE);
           WaitForSingleObject(params->receive_thread, INFINITE);
         }
-        printf_mt("Send thread terminated.\n");
+        wprintf_mt(L"Send thread terminated.\n");
         return 0;
       }
-      strcpy(input_buffer, pass.c_str());
-      strcpy(send_buffer, "password_first:");
-      strcat(send_buffer, sha256(string(input_buffer)).c_str());
+      wcscpy(input_buffer, pass.c_str());
+      wcscpy(send_buffer, L"password_first:");
+      wcscat(send_buffer, converter.from_bytes(sha256(converter.to_bytes(input_buffer))).c_str());
       ResetEvent(pass_reg_first_request_event);
       break;
 
@@ -369,23 +358,23 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       if(!get_password(stdin_handle, stdout_handle, &pass,
                        terminate_event, &_terminate) || _terminate){
         if(!_terminate)
-          printf_mt("Error reading password from console.\n");
+          wprintf_mt(L"Error reading password from console.\n");
         if(WaitForSingleObject(terminate_event, 0) != WAIT_OBJECT_0){
           SetEvent(terminate_event);
           WaitForSingleObject(thread_handles_ready_event, INFINITE);
           WaitForSingleObject(params->receive_thread, INFINITE);
         }
-        printf_mt("Send thread terminated.\n");
+        wprintf_mt(L"Send thread terminated.\n");
         return 0;
       }
-      strcpy(input_buffer, pass.c_str());
-      strcpy(send_buffer, "password_second:");
-      sprintf(salt_str, "%08x%08x",
+      wcscpy(input_buffer, pass.c_str());
+      wcscpy(send_buffer, L"password_second:");
+      swprintf(salt_str, L"%08x%08x",
               (unsigned int) (salt >> 32),
               (unsigned int) (salt & 0xFFFFFFFF));
-      strcpy(input_buffer, sha256(string(input_buffer)).c_str());
-      strcat(input_buffer, salt_str);
-      strcat(send_buffer, sha256(string(input_buffer)).c_str());
+      wcscpy(input_buffer, converter.from_bytes(sha256(converter.to_bytes(input_buffer))).c_str());
+      wcscat(input_buffer, salt_str);
+      wcscat(send_buffer, converter.from_bytes(sha256(converter.to_bytes(input_buffer))).c_str());
       ResetEvent(pass_reg_second_request_event);
       break;
 
@@ -393,23 +382,23 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       if(!get_password(stdin_handle, stdout_handle, &pass,
                        terminate_event, &_terminate) || _terminate){
         if(!_terminate)
-          printf_mt("Error reading password from console.\n");
+          wprintf_mt(L"Error reading password from console.\n");
         if(WaitForSingleObject(terminate_event, 0) != WAIT_OBJECT_0){
           SetEvent(terminate_event);
           WaitForSingleObject(thread_handles_ready_event, INFINITE);
           WaitForSingleObject(params->receive_thread, INFINITE);
         }
-        printf_mt("Send thread terminated.\n");
+        wprintf_mt(L"Send thread terminated.\n");
         return 0;
       }
-      strcpy(input_buffer, pass.c_str());
-      strcpy(send_buffer, "password:");
-      sprintf(salt_str, "%08x%08x",
+      wcscpy(input_buffer, pass.c_str());
+      wcscpy(send_buffer, L"password:");
+      swprintf(salt_str, L"%08x%08x",
               (unsigned int) (salt >> 32),
               (unsigned int) (salt & 0xFFFFFFFF));
-      strcpy(input_buffer, sha256(string(input_buffer)).c_str());
-      strcat(input_buffer, salt_str);
-      strcat(send_buffer, sha256(string(input_buffer)).c_str());
+      wcscpy(input_buffer, converter.from_bytes(sha256(converter.to_bytes(input_buffer))).c_str());
+      wcscat(input_buffer, salt_str);
+      wcscat(send_buffer, converter.from_bytes(sha256(converter.to_bytes(input_buffer))).c_str());
       ResetEvent(password_request_event);
       break;
 
@@ -417,16 +406,16 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       if(!cin_getline_mt(input_buffer, 256, stdin_handle, stdout_handle,
                          terminate_event, &_terminate) || _terminate){
         if(!_terminate)
-          printf_mt("Error reading from console.");
+          wprintf_mt(L"Error reading from console.");
         if(WaitForSingleObject(terminate_event, 0) != WAIT_OBJECT_0){
           SetEvent(terminate_event);
           WaitForSingleObject(thread_handles_ready_event, INFINITE);
           WaitForSingleObject(params->receive_thread, INFINITE);
         }
-        printf_mt("Send thread terminated.\n");
+        wprintf_mt(L"Send thread terminated.\n");
         return 0;
       }
-      strcpy(send_buffer, input_buffer);
+      wcscpy(send_buffer, input_buffer);
       break;
 
     default:
@@ -436,19 +425,21 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
     }
 
     if(should_send){
-      while(send(socket, send_buffer, SEND_BUFFER_SIZE, 0) == SOCKET_ERROR){
+      char send_buffer_raw[SEND_BUFFER_SIZE];
+      strlcpy(send_buffer_raw, converter.to_bytes(send_buffer).c_str(), SEND_BUFFER_SIZE);
+      while(send(socket, send_buffer_raw, SEND_BUFFER_SIZE, 0) == SOCKET_ERROR){
         if(WSAGetLastError() != WSAEWOULDBLOCK){
-          printf_mt("Connection error. Finishing all threads...\n");
+          wprintf_mt(L"Connection error. Finishing all threads...\n");
           if(WaitForSingleObject(terminate_event, 0) != WAIT_OBJECT_0){
             SetEvent(terminate_event);
             WaitForSingleObject(thread_handles_ready_event, INFINITE);
             WaitForSingleObject(params->receive_thread, INFINITE);
           }
-          printf_mt("Send thread terminated.\n");
+          wprintf_mt(L"Send thread terminated.\n");
           return 0;
         }
         if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-          printf_mt("Send thread terminated.\n");
+          wprintf_mt(L"Send thread terminated.\n");
           return 0;
         }
         Sleep(10);
@@ -471,56 +462,59 @@ DWORD WINAPI server_to_client(LPVOID lpParam){
   HANDLE authorized_event = params->authorized_event;
   HANDLE auth_fail_event = params->auth_fail_event;
 
-  char receive_buffer[RECEIVE_BUFFER_SIZE];
+  char receive_buffer_raw[RECEIVE_BUFFER_SIZE];
+  wstring receive_buffer;
   int res;
-  printf_mt("Receive thread started.\n");
+  wprintf_mt(L"Receive thread started.\n");
   while(true){
-    while(recv(socket, receive_buffer, RECEIVE_BUFFER_SIZE, 0) == SOCKET_ERROR){
+    while(recv(socket, receive_buffer_raw, RECEIVE_BUFFER_SIZE, 0) == SOCKET_ERROR){
       if(WSAGetLastError() != WSAEWOULDBLOCK){
-        printf_mt("Connection error. Finishing all threads...\n");
+        wprintf_mt(L"Connection error. Finishing all threads...\n");
         if(WaitForSingleObject(terminate_event, 0) != WAIT_OBJECT_0){
           SetEvent(terminate_event);
           WaitForSingleObject(thread_handles_ready_event, INFINITE);
           WaitForSingleObject(params->send_thread, INFINITE);
         }
-        printf_mt("Receive thread terminated.\n");
+        wprintf_mt(L"Receive thread terminated.\n");
         return 0;
       }
       if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-        printf_mt("Receive thread terminated.\n");
+        wprintf_mt(L"Receive thread terminated.\n");
         return 0;
       }
       Sleep(10);
     }
 
-    if(strcmp(receive_buffer, "") != 0){
+    receive_buffer = converter.from_bytes(receive_buffer_raw);
+
+    if(wcscmp(receive_buffer.c_str(), L"") != 0){
       if(WaitForSingleObject(authorized_event, 0) == WAIT_OBJECT_0){
-        printf_mt("> %s\n", receive_buffer);
+        wprintf_mt(L"> %S\n", receive_buffer.c_str());
       }
       else{
-        if(strcmp(receive_buffer, "password_first?") == 0){
+        if(wcscmp(receive_buffer.c_str(), L"password_first?") == 0){
           SetEvent(pass_reg_first_request_event);
         }
-        else if(strncmp(receive_buffer, "password_second?", 16) == 0){
+        else if(wcsncmp(receive_buffer.c_str(), L"password_second?", 16) == 0){
           unsigned int salt_h, salt_l;
-          sscanf(receive_buffer + 16, "%8x%8x", &salt_h, &salt_l);
+          swscanf(receive_buffer.c_str() + 16, L"%8x%8x", &salt_h, &salt_l);
           salt = (((unsigned long long) salt_h) << 32) | salt_l;
           SetEvent(pass_reg_second_request_event);
         }
-        else if(strncmp(receive_buffer, "password?", 9) == 0){
+        else if(wcsncmp(receive_buffer.c_str(), L"password?", 9) == 0){
           unsigned int salt_h, salt_l;
-          sscanf(receive_buffer + 9, "%8x%8x", &salt_h, &salt_l);
+          swscanf(receive_buffer.c_str() + 9, L"%8x%8x", &salt_h, &salt_l);
           salt = (((unsigned long long) salt_h) << 32) | salt_l;
           SetEvent(password_request_event);
         }
-        else if(strcmp(receive_buffer, "auth_ok!") == 0){
+        else if(wcscmp(receive_buffer.c_str(), L"auth_ok!") == 0){
           SetEvent(authorized_event);
         }
-        else if(strcmp(receive_buffer, "auth_fail!") == 0){
+        else if(wcscmp(receive_buffer.c_str(), L"auth_fail!") == 0){
           SetEvent(auth_fail_event);
         }
         else
-          printf_mt("> %s\n", receive_buffer);
+          wprintf_mt(L"> %S\n", receive_buffer);
       }
     }
   }
@@ -530,20 +524,21 @@ int main()
 {
 
   setlocale(LC_ALL, "ru_RU.utf8");
+  SetConsoleCP(65001);
 
   HANDLE stdout_handle = GetStdHandle(STD_OUTPUT_HANDLE);
   HANDLE stdin_handle = GetStdHandle(STD_INPUT_HANDLE);
 
   if(stdin_handle == INVALID_HANDLE_VALUE ||
      stdout_handle == INVALID_HANDLE_VALUE){
-    printf_mt("Error getting console handles.\n");
+    wprintf_mt(L"Error getting console handles.\n");
     return 0;
   }
 
   SetConsoleTextAttribute(stdout_handle,
                           FOREGROUND_GREEN |
                           FOREGROUND_INTENSITY);
-  SetConsoleTitle("CardBluff");
+  SetConsoleTitleW(L"CardBluff");
 
   stdin_mutex = CreateMutex(NULL, FALSE, NULL);
   stdout_mutex = CreateMutex(NULL, FALSE, NULL);
@@ -551,7 +546,7 @@ int main()
 
   DWORD poll;
   int res, i = 1, port = 999;
-  char buf[256];
+  wchar_t buf[256];
   char msg[256] = "";
   char ip[15];
   WSADATA data;
@@ -609,15 +604,22 @@ int main()
 
   state = ENTER_NICKNAME;
 
-  string nickname;
-  getline(cin, nickname);
+  wstring nickname;
+  getline(wcin, nickname);
 
-  sprintf(buf, "nickname:%s", nickname.c_str());
-  send(sock, buf, sizeof(buf), 0);
+  nickname = L"nickname:" + nickname;
+
+  char buf_raw[SEND_BUFFER_SIZE];
+  strlcpy(buf_raw, converter.to_bytes(nickname).c_str(), SEND_BUFFER_SIZE);
+
+  printf_mt("nick: %S\n", nickname.c_str());
+  printf_mt("raw: %s\n", buf_raw);
+
+  send(sock, buf_raw, sizeof(buf_raw), 0);
 
   unsigned long non_blocking = 1;
   if (ioctlsocket(sock, FIONBIO, &non_blocking) == SOCKET_ERROR) {
-    printf_mt("Failed to put socket into non-blocking mode\n");
+    wprintf_mt(L"Failed to put socket into non-blocking mode\n");
     closesocket(sock);
     return 0;
   }

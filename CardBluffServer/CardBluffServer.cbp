@@ -33,6 +33,7 @@
 			<Add option="-std=c++14" />
 			<Add option="-fexceptions" />
 			<Add option="-U__STRICT_ANSI__" />
+			<Add option="-Wformat" />
 		</Compiler>
 		<Linker>
 			<Add option="-lws2_32" />

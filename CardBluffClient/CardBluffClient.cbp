@@ -37,6 +37,10 @@
 		</Linker>
 		<Unit filename="main.cpp" />
 		<Unit filename="sha256/sha256.cpp" />
+		<Unit filename="util/strlcpy.cpp" />
+		<Unit filename="util/strlcpy.h" />
+		<Unit filename="util/unicode.cpp" />
+		<Unit filename="util/unicode.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />
