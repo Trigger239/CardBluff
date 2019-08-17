@@ -632,7 +632,7 @@ int main()
   };
 
   if(sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS clients(id INTEGER PRIMARY KEY,nickname TEXT UNIQUE,password TEXT,rating INTEGER);", NULL, nullptr, &z_err_msg)){
-    log("Error creating table or checking its existance.\nSQLite error: %s\n", z_err_msg);
+    log("Error creating table or checking its existence.\nSQLite error: %s\n", z_err_msg);
     sqlite3_free(z_err_msg);
     sqlite3_close(db);
     return 0;
