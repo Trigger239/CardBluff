@@ -21,6 +21,8 @@
 #include "util/unicode.h"
 
 #include <cstdio>
+#include <io.h>
+#include <fcntl.h>
 
 typedef struct _CONSOLE_FONT_INFOEX
 {
@@ -48,16 +50,19 @@ using namespace std;
 
 HANDLE stdout_mutex;
 
-wofstream logfile("CardBluffServer.log");
+ofstream logfile("CardBluffServer.log");
 
 void log(const char* format, ...){
   va_list args;
   va_start(args, format);
   WaitForSingleObject(stdout_mutex, INFINITE);
   char str[1000];
-  vprintf(format, args);
+  //vprintf(format, args);
   vsprintf(str, format, args);
-  logfile << converter.from_bytes(str);
+  logfile << string(str);
+  wstring wstr = converter.from_bytes(str);
+  //logfile << wstr;
+  wcout << wstr;
   logfile.flush();
   ReleaseMutex(stdout_mutex);
   va_end(args);
@@ -610,10 +615,10 @@ int main()
   char str_raw[30];
   string st = converter.to_bytes(s);
   wstring wstr = converter.from_bytes(st);
-  wcout << L"1.5" << s << ' ' << wstr << L'\n';
+  //wcout << L"1.5" << s << ' ' << wstr << L'\n';
   copy(st.begin(), st.end() + 1, str_raw);
   //wcout << '\"' << st << '\"' << ' ' << st.size() << '\n';
-  log("1: %s, %u\n", str_raw, strlen(str_raw));
+  //log("1: %s, %u\n", str_raw, strlen(str_raw));
   for(int i = 0; i < strlen(str_raw) + 1; i++)
     log("%u ", (unsigned int) (unsigned char) str_raw[i]);
   log("\n");

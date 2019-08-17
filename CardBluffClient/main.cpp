@@ -423,7 +423,7 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
           if(wclear(w) == ERR) return ERR;
           if(box(w, 0, 0) == ERR) return ERR;
           if(mvwaddwstr(w, 1, 1, input_buffer.c_str()) == ERR) return ERR;
-          if(mvwchgat(w, 1, cursor + 1, 1, A_UNDERLINE, 1, nullptr) == ERR) return ERR;
+          if(mvwchgat(w, 1, cursor + 1, 1, A_UNDERLINE, 2, nullptr) == ERR) return ERR;
           return wrefresh(w);
         }) == ERR)
       {
@@ -455,54 +455,6 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
   }
 
   return ret;
-}
-
-bool win_get_password_nonblock(WINDOW* win, wstring& password, //int n,
-                          HANDLE terminate_event,
-                          bool* _terminate = nullptr){
-  *_terminate = false;
-  int count = 0;
-  wchar_t buf[256];
-
-  use_win(win, [&](WINDOW* w){
-      wmove(w, 1, 1);
-      wrefresh(w);
-      //noecho();
-      nodelay(w, true);
-      //cbreak();
-//      bool string_end = false;
-//      while(!string_end){
-//        wchar_t c;
-//        while((c = wget_wch(w)) == ERR){
-//          if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-//            *_terminate = true;
-//            break;
-//          }
-//          Sleep(10);
-//        }
-//        //if(c == KEY_LEFT)
-//      }
-      while(wgetn_wstr(w, (wint_t*) buf, 256) == ERR){
-        if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-          *_terminate = true;
-          break;
-        }
-        //wmove(w, 1, 1);
-        //wrefresh(w);
-        Sleep(10);
-      }
-
-      nodelay(w, false);
-      echo();
-      return OK;
-    });
-
-  if(*_terminate){
-    return true;
-  }
-
-  password = wstring(buf);
-  return true;
 }
 
 DWORD WINAPI client_to_server(LPVOID lpParam){
@@ -689,8 +641,6 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 DWORD WINAPI server_to_client(LPVOID lpParam){
   thread_params_t* params = (thread_params_t*) lpParam;
   SOCKET socket = params->socket;
-  HANDLE stdout_handle = params->stdout_handle;
-  HANDLE stdin_handle = params->stdin_handle;
   HANDLE thread_handles_ready_event = params->terminate_event;
   HANDLE terminate_event = params->terminate_event;
   HANDLE nickname_request_event = params->nickname_request_event;
@@ -729,7 +679,7 @@ DWORD WINAPI server_to_client(LPVOID lpParam){
 
     if(wcscmp(receive_buffer.c_str(), L"") != 0){
       if(WaitForSingleObject(authorized_event, 0) == WAIT_OBJECT_0){
-        win_wprintw(output_win, "> %ls\n", receive_buffer.c_str());
+        win_addwstr(output_win, (L"> " + receive_buffer + L"\n").c_str());
       }
       else{
         if(wcscmp(receive_buffer.c_str(), L"password_first?") == 0){
@@ -754,7 +704,8 @@ DWORD WINAPI server_to_client(LPVOID lpParam){
           SetEvent(auth_fail_event);
         }
         else
-          win_wprintw(output_win, "> %ls\n", receive_buffer.c_str());
+          win_addwstr(output_win, (L"> " + receive_buffer + L"\n").c_str());
+          //win_wprintw(output_win, "> %s\n", receive_buffer.c_str());
       }
     }
   }
@@ -783,41 +734,17 @@ void set_console_font(const wchar_t* font)
 
 int main()
 {
-  setlocale(LC_ALL, "ru_RU.utf8");
+  //setlocale(LC_ALL, "ru_RU.utf8");
+  setlocale(LC_ALL, "");
   //SetConsoleCP(65001);
   set_console_font(L"Courier New");
-
-//  wint_t str[101];
-//  //char buf_r[200];
-//
-//  wmove(input_win, 1, 1);
-//  wrefresh(input_win);
-//  wget_wstr(input_win, str);
-//  //if(wget_wstr(input_win, str) == ERR){
-//    waddwstr(output_win, L"Error абв");
-// // }
-//  //else{
-//
-//  //wstring str = converter.from_bytes(buf_r);
-//
-//  //wprintw(output_win, "%ls", str);
-//    waddwstr(output_win, (wchar_t*) str);
-//  //}
-//  wrefresh(output_win);
-//
-//  wgetch(input_win);
-//
-//  refresh();
-//  endwin();
-//  return 0;
-
 
   HANDLE stdout_handle = GetStdHandle(STD_OUTPUT_HANDLE);
   HANDLE stdin_handle = GetStdHandle(STD_INPUT_HANDLE);
 
   if(stdin_handle == INVALID_HANDLE_VALUE ||
      stdout_handle == INVALID_HANDLE_VALUE){
-    wprintf_mt(L"Error getting console handles.\n");
+    cout << "Error getting console handles.\n";
     return 0;
   }
 
@@ -825,6 +752,39 @@ int main()
                           FOREGROUND_GREEN |
                           FOREGROUND_INTENSITY);
   SetConsoleTitleW(L"CardBluff");
+
+  WINDOW* input_win;
+  WINDOW* output_win;
+
+  initscr();
+
+  cbreak();             // Immediate key input
+  nonl();               // Get return key
+  timeout(0);           // Non-blocking input
+  keypad(stdscr, 1);    // Fix keypad
+  noecho();             // No automatic printing
+  curs_set(0);          // Hide real cursor
+  intrflush(stdscr, 0); // Avoid potential graphical issues
+  leaveok(stdscr, 1);   // Don't care where cursor is left
+
+  int rows, cols;
+  getmaxyx(stdscr, rows, cols);
+
+  refresh();
+
+  output_win = newwin(rows - INPUT_WINDOW_ROWS, cols, 0, 0);
+  refresh();
+  scrollok(output_win, true);
+
+  input_win = newwin(INPUT_WINDOW_ROWS, cols, rows - INPUT_WINDOW_ROWS, 0);
+  refresh();
+  use_win(input_win, [&](WINDOW* w){
+            if(wclear(w) == ERR) return ERR;
+            if(box(w, 0, 0) == ERR) return ERR;
+            return wrefresh(w);
+          });
+
+  refresh();
 
   stdin_mutex = CreateMutex(NULL, FALSE, NULL);
   stdout_mutex = CreateMutex(NULL, FALSE, NULL);
@@ -843,10 +803,10 @@ int main()
   signal(SIGKILL, s_handle);
   signal(SIGQUIT, s_handle);
 
-  cout << "Enter IP to connect to: ";
-  gets(ip);
+  //cout << "Enter IP to connect to: ";
+  //gets(ip);
 
-  if(strlen(ip) == 0)
+  //if(strlen(ip) == 0)
     strcpy(ip, "127.0.0.1");
 
   sockaddr_in ser;
@@ -858,89 +818,54 @@ int main()
 
   memcpy(&addr, &ser, sizeof(SOCKADDR_IN));
 
+  win_addwstr(output_win, L"WSA Startup... ");
   res = WSAStartup(MAKEWORD(1, 1), &data);      //Start Winsock
-  cout << "\nWSAStartup"
-       << "\nVersion: " << data.wVersion
-       << "\nDescription: " << data.szDescription
-       << "\nStatus: " << data.szSystemStatus << endl;
+
+//  cout << "\nWSAStartup"
+//       << "\nVersion: " << data.wVersion
+//       << "\nDescription: " << data.szDescription
+//       << "\nStatus: " << data.szSystemStatus << endl;
 
   if(res != 0)
-      s_cl("WSAStarup failed",WSAGetLastError());
+      s_cl("failed",WSAGetLastError());
 
+  win_addwstr(output_win, L"OK\n");
+  win_addwstr(output_win, L"Creating socket... ");
   sock = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);       //Create the socket
       if(sock == INVALID_SOCKET )
           s_cl("Invalid Socket", WSAGetLastError());
       else if(sock == SOCKET_ERROR)
           s_cl("Socket Error", WSAGetLastError());
       else
-          cout << "Socket Established" << endl;
+        win_addwstr(output_win, L"OK\n");
 
-
-
+  win_addwstr(output_win, L"Connecting to server... ");
   res = connect(sock,&addr,sizeof(addr));               //Connect to the server
   if(res != 0 ){
     s_cl("SERVER UNAVAILABLE", res);
   }
   else{
-    cout<<"\nConnected to Server: \n";
-    memcpy(&ser, &addr, sizeof(SOCKADDR));
+    win_addwstr(output_win, L"OK\n");
   }
-
-
-
-  cout << "Enter nickname: ";
-
-  state = ENTER_NICKNAME;
-
-  wstring nickname;
-  getline(wcin, nickname);
-
-  nickname = L"nickname:" + nickname;
-
-  char buf_raw[SEND_BUFFER_SIZE];
-  strlcpy(buf_raw, converter.to_bytes(nickname).c_str(), SEND_BUFFER_SIZE);
-
-  send(sock, buf_raw, sizeof(buf_raw), 0);
 
   HANDLE terminate_event = CreateEvent(NULL, TRUE, FALSE, NULL);
   unsigned long non_blocking = 1;
   if (ioctlsocket(sock, FIONBIO, &non_blocking) == SOCKET_ERROR) {
-    wprintf_mt(L"Failed to put socket into non-blocking mode\n");
+    win_addwstr(output_win, L"Failed to put socket into non-blocking mode\n");
     closesocket(sock);
     return 0;
   }
 
-  WINDOW* input_win;
-  WINDOW* output_win;
+  win_addwstr(output_win, L"Enter nickname:\n");
 
-  initscr();
-
-  cbreak();             // Immediate key input
-  nonl();               // Get return key
-  timeout(0);           // Non-blocking input
-  //keypad(stdscr, 1);    // Fix keypad
-  noecho();             // No automatic printing
-  curs_set(0);          // Hide real cursor
-  intrflush(stdscr, 0); // Avoid potential graphical issues
-  leaveok(stdscr, 1);   // Don't care where cursor is left
-
-  int rows, cols;
-  getmaxyx(stdscr, rows, cols);
-
-  input_win = newwin(INPUT_WINDOW_ROWS, cols, rows - INPUT_WINDOW_ROWS, 0);
-  box(input_win, 0, 0);
-  //wborder(input_win, )
-  output_win = newwin(rows - INPUT_WINDOW_ROWS, cols, 0, 0);
-  scrollok(output_win, true);
-
-  refresh();
+  state = ENTER_NICKNAME;
 
   HANDLE send_thread, receive_thread;
   DWORD send_th, receive_th;
 
   HANDLE thread_handles_ready_event = CreateEvent(NULL, TRUE, FALSE, NULL);
   //
-  HANDLE nickname_request_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+  HANDLE nickname_request_event = CreateEvent(NULL, TRUE, TRUE, NULL);
   HANDLE pass_reg_first_request_event = CreateEvent(NULL, TRUE, FALSE, NULL);
   HANDLE pass_reg_second_request_event = CreateEvent(NULL, TRUE, FALSE, NULL);
   HANDLE password_request_event = CreateEvent(NULL, TRUE, FALSE, NULL);
