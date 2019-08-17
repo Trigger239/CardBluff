@@ -38,16 +38,19 @@
 1565549813 d:\cardbluff\cardbluff\cardbluffclient\util\strlcpy.h
 	<cstddef>
 
-1565711083 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\main.cpp
+1566033585 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\main.cpp
 	<windows.h>
 	<winsock.h>
 	<iostream>
 	<conio.h>
 	<signal.h>
 	<cstdio>
+	<functional>
+	<cctype>
 	"sha256/sha256.h"
 	"util/strlcpy.h"
 	"util/unicode.h"
+	"pdcurses/curses.h"
 
 1565684565 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\sha256\sha256.h
 	<string>
@@ -70,4 +73,27 @@
 
 1565710874 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\util\strlcpy.cpp
 	"strlcpy.h"
+
+1549107440 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\pdcurses\curses.h
+	<stdarg.h>
+	<stddef.h>
+	<stdio.h>
+	<wchar.h>
+	<stdbool.h>
+
+1566023274 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\ncurses\include\curses.h
+	<ncurses_dll.h>
+	<stdint.h>
+	<stdio.h>
+	<stdarg.h>
+	<stddef.h>
+	<stdbool.h>
+	<libutf8.h>
+	<wchar.h>
+	<unctrl.h>
+
+1565992373 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\ncurses\include\ncurses_dll.h
+
+1565992377 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\ncurses\include\unctrl.h
+	<curses.h>
 

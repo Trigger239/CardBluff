@@ -31,12 +31,18 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add option="-ffunction-sections" />
+			<Add option="-fdata-sections" />
+			<Add directory="ncurses/include" />
 		</Compiler>
 		<Linker>
 			<Add option="-lws2_32" />
+			<Add option="-gc-sections" />
+			<Add library="pdcurses\wincon\pdcurses.a" />
 		</Linker>
 		<Unit filename="main.cpp" />
 		<Unit filename="sha256/sha256.cpp" />
+		<Unit filename="util/lambda_to_func.h" />
 		<Unit filename="util/strlcpy.cpp" />
 		<Unit filename="util/strlcpy.h" />
 		<Unit filename="util/unicode.cpp" />

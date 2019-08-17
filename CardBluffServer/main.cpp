@@ -1,3 +1,4 @@
+#define _WIN32_WINNT 0x0601
 #include <windows.h>
 #include <cstdlib>
 #include <cstdio>
@@ -21,11 +22,33 @@
 
 #include <cstdio>
 
+typedef struct _CONSOLE_FONT_INFOEX
+{
+    ULONG cbSize;
+    DWORD nFont;
+    COORD dwFontSize;
+    UINT  FontFamily;
+    UINT  FontWeight;
+    WCHAR FaceName[LF_FACESIZE];
+}CONSOLE_FONT_INFOEX, *PCONSOLE_FONT_INFOEX;
+//the function declaration begins
+#ifdef __cplusplus
+extern "C" {
+#endif
+BOOL WINAPI SetCurrentConsoleFontEx(HANDLE hConsoleOutput, BOOL bMaximumWindow, PCONSOLE_FONT_INFOEX
+lpConsoleCurrentFontEx);
+BOOL WINAPI GetCurrentConsoleFontEx(HANDLE hConsoleOutput, BOOL bMaximumWindow, PCONSOLE_FONT_INFOEX
+lpConsoleCurrentFontEx);
+#ifdef __cplusplus
+}
+#endif
+
+
 using namespace std;
 
 HANDLE stdout_mutex;
 
-ofstream logfile("CardBluffServer.log");
+wofstream logfile("CardBluffServer.log");
 
 void log(const char* format, ...){
   va_list args;
@@ -34,7 +57,7 @@ void log(const char* format, ...){
   char str[1000];
   vprintf(format, args);
   vsprintf(str, format, args);
-  logfile << string(str);
+  logfile << converter.from_bytes(str);
   logfile.flush();
   ReleaseMutex(stdout_mutex);
   va_end(args);
@@ -249,7 +272,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
       wstring receive_buffer = converter.from_bytes(receive_buffer_raw);
       for(int i = 0; i < receive_buffer.size(); i++){
-        log("%u ", (unsigned int) (unsigned char) receive_buffer[i]);
+        log("%u ", (unsigned int) receive_buffer[i]);
         if(i % 16 == 15)
           log("\n");
       }
@@ -514,8 +537,9 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
       case IN_GAME:
         if(wcsncmp(receive_buffer.c_str(), L"/", 1) != 0){ //not a command
-          client->get_opponent()->push_string(&_terminate, L"%ls: %ls", client->get_nickname().c_str(), receive_buffer.c_str());
+          client->get_opponent()->push_string(client->get_nickname() + L":" +  receive_buffer, &_terminate);
           if(_terminate){
+
             log("Client %I64d: Receive thread terminated\n", client->get_id());
             sqlite3_close(db);
             return 0;
@@ -554,21 +578,41 @@ DWORD WINAPI find_duel_thread(LPVOID lpParam){
   }
 }
 
+void set_console_font(const wchar_t* font)
+{
+    HANDLE StdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_FONT_INFOEX info;
+    memset(&info, 0, sizeof(CONSOLE_FONT_INFOEX));
+    info.cbSize = sizeof(CONSOLE_FONT_INFOEX);              // prevents err=87 below
+    if (GetCurrentConsoleFontEx(StdOut, FALSE, &info))
+    {
+        info.FontFamily   = FF_DONTCARE;
+        info.dwFontSize.X = 0;  // leave X as zero
+        info.dwFontSize.Y = 14;
+        info.FontWeight   = 400;
+        wcscpy(info.FaceName, font);
+        if (SetCurrentConsoleFontEx(StdOut, FALSE, &info))
+        {
+        }
+    }
+}
+
 int main()
 {
-  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter_;
+  //std::wstring_convert<std::codecvt_utf8<wchar_t>> converter_;
 
   char* z_err_msg;
   setlocale(LC_ALL, "ru_RU.utf8");
   //SetConsoleCP(65001);
+  set_console_font(L"Courier New");
 
-  wstring s(L"ab");
+  wstring s(L"абв");
   char str_raw[30];
-  string st = converter_.to_bytes(s);
-  wstring wstr = converter_.from_bytes(st);
+  string st = converter.to_bytes(s);
+  wstring wstr = converter.from_bytes(st);
   wcout << L"1.5" << s << ' ' << wstr << L'\n';
   copy(st.begin(), st.end() + 1, str_raw);
-  cout << '\"' << st << '\"' << ' ' << st.size() << '\n';
+  //wcout << '\"' << st << '\"' << ' ' << st.size() << '\n';
   log("1: %s, %u\n", str_raw, strlen(str_raw));
   for(int i = 0; i < strlen(str_raw) + 1; i++)
     log("%u ", (unsigned int) (unsigned char) str_raw[i]);
