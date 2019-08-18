@@ -189,7 +189,7 @@ void client_to_server_cleanup(Client* client, sqlite3* db){
     WaitForSingleObject(game->get_thread_handle_ready_event(), INFINITE);
     HANDLE thread = game->get_thread();
 
-    game->finish(client);
+    game->finish(client == game->get_first_player() ? FIRST_PLAYER_LOST_GAME : SECOND_PLAYER_LOST_GAME);
 
     WaitForSingleObject(thread, INFINITE);
   }

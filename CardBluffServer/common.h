@@ -9,6 +9,8 @@
 #define PORT 2390
 #define ALL_CARDS ((uint8_t)(52))
 #define START_CARD_NUMBER ((uint8_t)(5))
+#define EQUALITY_CARD_NUMBER ((uint8_t)(10))
+#define TIE_CARD_NUMBER ((uint8_t)(26))
 
 
 #define DEFAULT_RATING 1200
