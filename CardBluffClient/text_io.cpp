@@ -1,0 +1,358 @@
+#include <windows.h>
+#include <locale>
+#include <string>
+#include <cstdio>
+#include <cwchar>
+#include <vector>
+
+#include "text_io.h"
+
+using namespace std;
+
+wchar_t *wcstok_r(wchar_t *str, const wchar_t *delim, wchar_t **nextp)
+{
+    wchar_t *ret;
+
+    if (str == NULL)
+    {
+        str = *nextp;
+    }
+
+    str += wcsspn(str, delim);
+
+    if (*str == L'\0')
+    {
+        return NULL;
+    }
+
+    ret = str;
+
+    str += wcscspn(str, delim);
+
+    if (*str)
+    {
+        *str++ = L'\0';
+    }
+
+    *nextp = str;
+
+    return ret;
+}
+
+typedef struct _CONSOLE_FONT_INFOEX
+{
+    ULONG cbSize;
+    DWORD nFont;
+    COORD dwFontSize;
+    UINT  FontFamily;
+    UINT  FontWeight;
+    WCHAR FaceName[LF_FACESIZE];
+}CONSOLE_FONT_INFOEX, *PCONSOLE_FONT_INFOEX;
+//the function declaration begins
+#ifdef __cplusplus
+extern "C" {
+#endif
+BOOL WINAPI SetCurrentConsoleFontEx(HANDLE hConsoleOutput, BOOL bMaximumWindow, PCONSOLE_FONT_INFOEX
+lpConsoleCurrentFontEx);
+BOOL WINAPI GetCurrentConsoleFontEx(HANDLE hConsoleOutput, BOOL bMaximumWindow, PCONSOLE_FONT_INFOEX
+lpConsoleCurrentFontEx);
+#ifdef __cplusplus
+}
+#endif
+
+HANDLE curses_mutex;
+
+WINDOW* input_win;
+WINDOW* output_win;
+
+unsigned int max_input_length;
+
+//returns true on success
+bool set_console_font(const wchar_t* font)
+{
+  HANDLE StdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+  CONSOLE_FONT_INFOEX info;
+  memset(&info, 0, sizeof(CONSOLE_FONT_INFOEX));
+  info.cbSize = sizeof(CONSOLE_FONT_INFOEX);              // prevents err=87 below
+  if (GetCurrentConsoleFontEx(StdOut, FALSE, &info))
+  {
+    info.FontFamily   = FF_DONTCARE;
+    info.dwFontSize.X = 0;  // leave X as zero
+    info.dwFontSize.Y = 14;
+    info.FontWeight   = 400;
+    wcscpy(info.FaceName, font);
+    if (SetCurrentConsoleFontEx(StdOut, FALSE, &info))
+    {
+      return true;
+    }
+    else
+      return false;
+  }
+  return false;
+}
+
+bool console_init(void){
+  //setlocale(LC_ALL, "ru_RU.utf8");
+  setlocale(LC_ALL, "");
+  //SetConsoleCP(65001);
+  if(!set_console_font(L"Lucida Console"))
+    return false;
+
+  if(!SetConsoleTitleW(L"CardBluff"))
+    return false;
+
+  curses_mutex = CreateMutex(NULL, FALSE, NULL);
+  if(curses_mutex == INVALID_HANDLE_VALUE)
+    return false;
+
+  initscr();
+
+  cbreak();             // Immediate key input
+  nonl();               // Get return key
+  timeout(0);           // Non-blocking input
+  keypad(stdscr, 1);    // Fix keypad
+  noecho();             // No automatic printing
+  curs_set(0);          // Hide real cursor
+  intrflush(stdscr, 0); // Avoid potential graphical issues
+  leaveok(stdscr, 1);   // Don't care where cursor is left
+
+  if(has_colors()){
+    start_color();
+    init_pair(COLOR_INPUT_ECHO, COLOR_CYAN, COLOR_BLACK);
+    init_pair(COLOR_INPUT_CURSOR, COLOR_BLACK, COLOR_WHITE);
+    init_pair(COLOR_MESSAGE_SERVER, COLOR_RED, COLOR_BLACK);
+  }
+
+  int rows, cols;
+  getmaxyx(stdscr, rows, cols);
+  max_input_length = cols - 2;
+
+  output_win = newwin(rows - INPUT_WINDOW_ROWS, cols, 0, 0);
+  refresh();
+  wattron(output_win, A_BOLD);
+  scrollok(output_win, true);
+
+  input_win = newwin(INPUT_WINDOW_ROWS, cols, rows - INPUT_WINDOW_ROWS, 0);
+  refresh();
+  wattron(input_win, A_BOLD);
+  use_win(input_win, [&](WINDOW* w){
+            if(wclear(w) == ERR) return ERR;
+            if(box(w, 0, 0) == ERR) return ERR;
+            return wrefresh(w);
+          });
+
+  refresh();
+
+  return true;
+}
+
+int use_win(WINDOW *win, std::function<int(WINDOW*)> cb_func){
+//  auto callback = [=](WINDOW* w){
+//    return cb_func(w);
+//  };
+//  auto thunk = [](WINDOW* w, void* arg){ // note thunk is captureless
+//    return (*static_cast<decltype(callback)*>(arg))(w);
+//  };
+
+  int ret;
+  WaitForSingleObject(curses_mutex, INFINITE);
+  //ret = use_window(win, thunk, &callback);
+  ret = cb_func(win);
+  ReleaseMutex(curses_mutex);
+  return ret;
+}
+
+int win_addwstr(WINDOW* win, const wchar_t* str){
+  return use_win(win, [&](WINDOW* w){int res = waddwstr(w, str); wrefresh(w); return res;});
+}
+
+int win_wprintw(WINDOW* win, const char* format, ...){
+  int ret;
+  va_list args;
+  va_start(args, format);
+  ret = use_win(win, [&](WINDOW* w){int res = vwprintw(w, (const char*) format, args); wrefresh(w); return res;});
+  va_end(args);
+  return ret;
+}
+
+bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
+                  std::wstring &str, bool hide_input,
+                  HANDLE terminate_event,
+                  bool* _terminate){
+  *_terminate = false;
+
+  std::wstring input_buffer;
+  unsigned int cursor = 0;
+  bool string_ready = false;
+  bool need_update = true;
+  bool ret = true;
+
+  while(true){
+    if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
+      *_terminate = true;
+      break;
+    }
+
+    wchar_t c;
+    //int res = getch((wint_t*) &c);
+    c = getch();
+
+    if(c != (wchar_t) ERR){
+      need_update = true;
+
+      if(!(c & KEY_CODE_YES) && iswprint(c)) {
+        if(input_buffer.size() < max_input_length)
+          input_buffer.insert(cursor++, 1, c);
+      }
+
+      switch(c){
+      case KEY_LEFT:
+        if(cursor > 0)
+          cursor--;
+        break;
+
+      case KEY_RIGHT:
+        if(cursor < input_buffer.size())
+          cursor++;
+        break;
+
+      case KEY_HOME:
+        cursor = 0;
+        break;
+
+      case KEY_END:
+        cursor = input_buffer.size();
+        break;
+
+      case L'\t':
+        break;
+
+      case KEY_BACKSPACE:
+      case 127:
+      case 8:
+        if(cursor <= 0){
+          break;
+        }
+        cursor--;
+        // Fall-through
+      case KEY_DC:
+        if(cursor < input_buffer.size()){
+          input_buffer.erase(cursor, 1);
+        }
+        break;
+
+      case KEY_ENTER:
+      case L'\r':
+      case L'\n':
+        str = input_buffer;
+        string_ready = true;
+        break;
+      }
+    }
+
+    if(!string_ready && need_update){
+      if(use_win(input_win, [&](WINDOW* w){
+          if(wclear(w) == ERR) return ERR;
+          if(box(w, 0, 0) == ERR) return ERR;
+          if(hide_input){
+            if(mvwaddwstr(w, 1, 1, std::wstring(input_buffer.size(), L'*').c_str()) == ERR)
+              return ERR;
+          }
+          else{
+            if(mvwaddwstr(w, 1, 1, input_buffer.c_str()) == ERR)
+              return ERR;
+          }
+          if(mvwchgat(w, 1, cursor + 1, 1, COLOR_PAIR(COLOR_INPUT_CURSOR), 0, nullptr) == ERR) return ERR;
+          return wrefresh(w);
+        }) == ERR)
+      {
+        ret = false;
+        break;
+      }
+      need_update = false;
+    }
+
+    if(string_ready){
+      if(use_win(input_win, [&](WINDOW* w){
+          if(wclear(w) == ERR) return ERR;
+          if(box(w, 0, 0) == ERR) return ERR;
+          return wrefresh(w);
+        }) == ERR)
+      {
+        ret = false;
+        break;
+      }
+
+      if(hide_input)
+        input_buffer = std::wstring(input_buffer.size(), L'*');
+
+      input_buffer += L"\n";
+
+      if(use_win(output_win, [&](WINDOW* w){
+          if(wattron(w, COLOR_PAIR(COLOR_INPUT_ECHO)) == ERR) return ERR;
+          if(waddwstr(w, input_buffer.c_str()) == ERR) return ERR;
+          if(wattroff(w, COLOR_PAIR(COLOR_INPUT_ECHO)) == ERR) return ERR;
+          return wrefresh(w);
+        }) == ERR){
+        ret = false;
+      }
+      break;
+    }
+  }
+
+  if(*_terminate){
+    return true;
+  }
+
+  return ret;
+}
+
+int win_addwstr_colored(WINDOW* win, wchar_t* str){
+
+  if(wcsncmp(str, SERVER_PREFIX, wcslen(SERVER_PREFIX)) == 0){
+    return use_win(win, [&](WINDOW* w){
+              if(wattron(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
+              if(waddwstr(w, str) == ERR) return ERR;
+              if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
+              return wrefresh(w);
+            });
+  }
+  if(wcsncmp(str, CARDS_PREFIX, wcslen(CARDS_PREFIX)) == 0){
+    std::vector<std::pair<unsigned int, wchar_t>> cards;
+    unsigned int card_number, suit;
+    wchar_t value;
+    wchar_t *tok, *st;
+    if((tok = wcstok_r(str, L":", &st))){ //prefix
+      return ERR;
+    }
+    tok = wcstok_r(nullptr, L":", &st); //card number
+    if(tok == nullptr ||
+       swscanf(tok, L"%u", &card_number) != 1){
+      return ERR;
+    }
+    for(unsigned int i = 0; i < card_number; i++){
+      tok = wcstok_r(nullptr, L":", &st);
+      if(tok == nullptr ||
+         swscanf(tok, L"%u,%lc", &suit, &value) != 2)
+        return ERR;
+      cards.push_back(std::make_pair(suit, value));
+    }
+
+    return use_win(win, [&](WINDOW* w){
+              if(waddwstr(w, tok) == ERR) return ERR;
+              for(auto card: cards){
+                if(waddnwstr(w, L" ", 1) == ERR) return ERR;
+                if(waddnwstr(w, &card.second, 1) == ERR) return ERR;
+                if(card.first < 2)
+                  if(wattron(w, COLOR_PAIR(COLOR_CLUBS_DIAMONDS)) == ERR) return ERR;
+                wchar_t suit = card.first + L'0';
+                if(waddnwstr(w, &suit, 1) == ERR) return ERR;
+                if(card.first < 2)
+                  if(wattroff(w, COLOR_PAIR(COLOR_CLUBS_DIAMONDS)) == ERR) return ERR;
+                if(waddnwstr(w, L",", 1) == ERR) return ERR;
+              }
+              if(waddnwstr(w, L"\n", 1) == ERR) return ERR;
+              return wrefresh(w);
+            });
+  }
+}

@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
+#include <cinttypes>
 
 using namespace std;
 

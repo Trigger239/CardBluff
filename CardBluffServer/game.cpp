@@ -2,6 +2,7 @@
 #include "common.h"
 
 #include <cstdio>
+#include <cwchar>
 
 #define BUFFER_SIZE 1000
 
@@ -215,12 +216,12 @@ void Game::make_move(Client* client, const std::wstring& command, bool* _termina
   *_terminate = false;
 
   while(!TryEnterCriticalSection(&make_move_critical_section)){
-    if(WaitForSingleObject(terminate_event, 10)){
+    if(WaitForSingleObject(terminate_event, 10) == WAIT_OBJECT_0){
       *_terminate = true;
       return;
     }
   }
-  if(WaitForSingleObject(terminate_event, 0)){
+  if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
       *_terminate = true;
       return;
   }
@@ -284,7 +285,7 @@ void Game::make_move(Client* client, const std::wstring& command, bool* _termina
             player_loses_round(_terminate, current_move);
         }
     }
-    else if ((lcws.size() >= 2) && (lcws[0] == L'/') && (lcws[1] == L'm'))
+    else if (wcsncmp(lcws.c_str(), L"/m", 2) == 0)
     {
 
     }

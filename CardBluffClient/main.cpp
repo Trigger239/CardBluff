@@ -2,41 +2,16 @@
 #include <windows.h>
 #include <winsock.h>
 #include <iostream>
-#include <conio.h>
+//#include <conio.h>
 #include <signal.h>
 #include <cstdio>
-#include <functional>
+//#include <functional>
 #include <cctype>
 #include "sha256/sha256.h"
 #include "util/strlcpy.h"
 #include "util/unicode.h"
 //#include "util/lambda_to_func.h"
-
-#undef MOUSE_MOVED
-#define PDC_WIDE
-#define NCURSES_WIDECHAR 1
-#include "pdcurses/curses.h"
-
-typedef struct _CONSOLE_FONT_INFOEX
-{
-    ULONG cbSize;
-    DWORD nFont;
-    COORD dwFontSize;
-    UINT  FontFamily;
-    UINT  FontWeight;
-    WCHAR FaceName[LF_FACESIZE];
-}CONSOLE_FONT_INFOEX, *PCONSOLE_FONT_INFOEX;
-//the function declaration begins
-#ifdef __cplusplus
-extern "C" {
-#endif
-BOOL WINAPI SetCurrentConsoleFontEx(HANDLE hConsoleOutput, BOOL bMaximumWindow, PCONSOLE_FONT_INFOEX
-lpConsoleCurrentFontEx);
-BOOL WINAPI GetCurrentConsoleFontEx(HANDLE hConsoleOutput, BOOL bMaximumWindow, PCONSOLE_FONT_INFOEX
-lpConsoleCurrentFontEx);
-#ifdef __cplusplus
-}
-#endif
+#include "text_io.h"
 
 using namespace std;
 
@@ -72,206 +47,6 @@ HANDLE stdin_mutex;
 HANDLE stdout_mutex;
 HANDLE socket_mutex;
 
-void printf_mt(const char* format, ...){
-  va_list args;
-  va_start(args, format);
-  WaitForSingleObject(stdout_mutex, INFINITE);
-  vprintf(format, args);
-  ReleaseMutex(stdout_mutex);
-  va_end(args);
-}
-
-void wprintf_mt(const wchar_t* format, ...){
-  va_list args;
-  va_start(args, format);
-  WaitForSingleObject(stdout_mutex, INFINITE);
-  vwprintf(format, args);
-  ReleaseMutex(stdout_mutex);
-  va_end(args);
-}
-
-//if c == 0, then this function checks for any char in the buffer
-//if c != 0, it checks for c in the buffer
-//returns true on success, false on error
-bool console_has_char_in_input_buffer(HANDLE stdin_handle,
-                                      bool* result, wchar_t c = 0){
-  DWORD number_of_input_events;
-  INPUT_RECORD events[1024];
-
-  if(!PeekConsoleInputW(stdin_handle, events, 1024, &number_of_input_events)){
-    return false;
-  };
-  for(unsigned int i = 0; i < number_of_input_events; i++){
-    if(events[i].EventType == KEY_EVENT){
-      if(events[i].Event.KeyEvent.bKeyDown == true &&
-        (c == 0 || events[i].Event.KeyEvent.uChar.UnicodeChar == c)){
-        *result = true;
-        return true;
-      }
-    }
-  }
-  *result = false;
-  return true;
-}
-
-void scanf_mt(const char* format, ...){
-  va_list args;
-  va_start(args, format);
-  WaitForSingleObject(stdin_mutex, INFINITE);
-  vscanf(format, args);
-  ReleaseMutex(stdin_mutex);
-  va_end(args);
-}
-
-void wscanf_mt(const wchar_t* format, ...){
-  va_list args;
-  va_start(args, format);
-  WaitForSingleObject(stdin_mutex, INFINITE);
-  vwscanf(format, args);
-  ReleaseMutex(stdin_mutex);
-  va_end(args);
-}
-
-//returns true on success, false on error
-bool cin_getline_mt(wchar_t* s, unsigned int n,
-                    HANDLE stdin_handle = INVALID_HANDLE_VALUE,
-                    HANDLE stdout_handle = INVALID_HANDLE_VALUE,
-                    HANDLE terminate_event = INVALID_HANDLE_VALUE,
-                    bool* _terminate = nullptr){
-  if(stdout_handle == INVALID_HANDLE_VALUE ||
-     stdin_handle == INVALID_HANDLE_VALUE ||
-     terminate_event == INVALID_HANDLE_VALUE ||
-     _terminate == nullptr){
-    WaitForSingleObject(stdin_mutex, INFINITE);
-    wcin.getline(s, n);
-    ReleaseMutex(stdin_mutex);
-    return true;
-  }
-
-  *_terminate = false;
-  HANDLE handles[2] = {stdin_mutex, terminate_event};
-  DWORD wait_result = WaitForMultipleObjects(2, handles, FALSE, INFINITE);
-  if(wait_result == WAIT_OBJECT_0 + 1){
-    *_terminate = true;
-    return true;
-  }
-  if(wait_result != WAIT_OBJECT_0 + 0){
-    return false;
-  }
-
-  wstring buf;
-  string buf_raw;
-
-  while(true){
-    bool char_available;
-    DWORD count;
-
-    if(!console_has_char_in_input_buffer(stdin_handle, &char_available)){
-      ReleaseMutex(stdin_mutex);
-      return false;
-    }
-
-    if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-      ReleaseMutex(stdin_mutex);
-      *_terminate = true;
-      return true;
-    }
-
-    if(char_available){
-
-      //wcin.getline(s, n);
-      getline(cin, buf_raw);
-      //buf = converter.from_bytes(buf_raw);
-      break;
-    }
-    else
-      Sleep(10);
-  }
-
-  ReleaseMutex(stdin_mutex);
-
-  wcslcpy(s, buf.c_str(), n);
-  return true;
-}
-
-//returns true on success, false on error
-bool get_password(HANDLE stdin_handle,
-                  HANDLE stdout_handle,
-                  wstring* result,
-                  HANDLE terminate_event = INVALID_HANDLE_VALUE,
-                  bool* _terminate = nullptr){
-  // Set the console mode to no-echo, not-line-buffered input
-  DWORD mode;
-  if(!GetConsoleMode(stdin_handle, &mode))
-    return false;
-  if(!SetConsoleMode(stdin_handle, mode & ~(ENABLE_ECHO_INPUT |
-                                            ENABLE_LINE_INPUT |
-                                            ENABLE_PROCESSED_INPUT)))
-    return false;
-
-  wchar_t c;
-  bool char_available;
-  wstring res;
-  DWORD count;
-
-  if(_terminate != nullptr)
-    *_terminate = false;
-
-  while(true){
-    if(!console_has_char_in_input_buffer(stdin_handle, &char_available)){
-      WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
-      SetConsoleMode(stdin_handle, mode);
-      return false;
-    }
-
-    if(terminate_event != INVALID_HANDLE_VALUE && _terminate != nullptr)
-      if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-        WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
-        SetConsoleMode(stdin_handle, mode);
-        *_terminate = true;
-        return true;
-      }
-
-    if(char_available){
-      if(!ReadConsoleW(stdin_handle, &c, 1, &count, NULL)){
-        WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
-        SetConsoleMode(stdin_handle, mode);
-        return false;
-      }
-      if(count != 0){
-        if((c == L'\r') || (c == L'\n'))
-          break;
-        if(c == L'\b'){
-          if(res.length()){
-            if(!WriteConsoleW(stdout_handle, L"\b \b", 3, &count, NULL)){
-              WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
-              SetConsoleMode(stdin_handle, mode);
-              return false;
-            }
-            res.pop_back();
-          }
-        }
-        else{
-          if(!WriteConsoleW(stdout_handle, L"*", 1, &count, NULL)){
-            WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
-            SetConsoleMode(stdin_handle, mode);
-            return false;
-          }
-          res.push_back(c);
-        }
-      }
-    }
-    else
-      Sleep(10);
-  }
-
-  WriteConsoleW(stdout_handle, L"\n", 1, &count, NULL);
-  SetConsoleMode(stdin_handle, mode);
-
-  *result = res;
-
-  return true;
-}
 
 void s_handle(int s)
 {
@@ -285,7 +60,6 @@ void s_handle(int s)
   exit(0);
 }
 
-
 void s_cl(const char *a, int x)
 {
   cout << a;
@@ -295,8 +69,6 @@ void s_cl(const char *a, int x)
 struct thread_params_t{
   HANDLE send_thread;
   HANDLE receive_thread;
-  HANDLE stdout_handle;
-  HANDLE stdin_handle;
   SOCKET socket;
   HANDLE thread_handles_ready_event;
   HANDLE terminate_event;
@@ -310,158 +82,10 @@ struct thread_params_t{
   WINDOW* output_win;
 };
 
-HANDLE curses_mutex;
-
-int use_win(WINDOW *win, std::function<int(WINDOW*)> cb_func){
-//  auto callback = [=](WINDOW* w){
-//    return cb_func(w);
-//  };
-//  auto thunk = [](WINDOW* w, void* arg){ // note thunk is captureless
-//    return (*static_cast<decltype(callback)*>(arg))(w);
-//  };
-
-  int ret;
-  WaitForSingleObject(curses_mutex, INFINITE);
-  //ret = use_window(win, thunk, &callback);
-  ret = cb_func(win);
-  ReleaseMutex(curses_mutex);
-  return ret;
-}
-
-int win_addwstr(WINDOW* win, const wchar_t* str){
-  return use_win(win, [&](WINDOW* w){int res = waddwstr(w, str); wrefresh(w); return res;});
-}
-
-int win_wprintw(WINDOW* win, const char* format, ...){
-  int ret;
-  va_list args;
-  va_start(args, format);
-  ret = use_win(win, [&](WINDOW* w){int res = vwprintw(w, (const char*) format, args); wrefresh(w); return res;});
-  va_end(args);
-  return ret;
-}
-
-bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
-                  wstring &str,
-                  HANDLE terminate_event,
-                  bool* _terminate = nullptr){
-  *_terminate = false;
-
-  wstring input_buffer;
-  int cursor = 0;
-  bool string_ready = false;
-  bool need_update = false;
-  bool ret = true;
-
-  while(true){
-    if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-      *_terminate = true;
-      break;
-    }
-
-    wchar_t c;
-    //int res = getch((wint_t*) &c);
-    c = getch();
-    //if(res == ERR)
-    if(c == (wchar_t) ERR)
-      continue;
-
-    need_update = true;
-
-    //if((res != KEY_CODE_YES) && iswprint(c)) {
-    if(!(c & KEY_CODE_YES) && iswprint(c)) {
-        input_buffer.insert(cursor++, 1, c);
-    }
-
-    switch(c){
-    case ERR: /* no key pressed */ break;
-    case KEY_LEFT:
-      if(cursor > 0)
-        cursor--;
-      break;
-
-    case KEY_RIGHT:
-      if(cursor < input_buffer.size())
-        cursor++;
-      break;
-
-    case KEY_HOME:
-      cursor = 0;
-      break;
-
-    case KEY_END:
-      cursor = input_buffer.size();
-      break;
-
-    case L'\t':
-      break;
-
-    case KEY_BACKSPACE:
-    case 127:
-    case 8:
-      if(cursor <= 0){
-        break;
-      }
-      cursor--;
-      // Fall-through
-    case KEY_DC:
-      if(cursor < input_buffer.size()){
-        input_buffer.erase(cursor);
-      }
-      break;
-
-    case KEY_ENTER:
-    case L'\r':
-    case L'\n':
-      str = input_buffer;
-      string_ready = true;
-      break;
-    }
-
-    if(!string_ready && need_update){
-      if(use_win(input_win, [&](WINDOW* w){
-          if(wclear(w) == ERR) return ERR;
-          if(box(w, 0, 0) == ERR) return ERR;
-          if(mvwaddwstr(w, 1, 1, input_buffer.c_str()) == ERR) return ERR;
-          if(mvwchgat(w, 1, cursor + 1, 1, A_UNDERLINE, 2, nullptr) == ERR) return ERR;
-          return wrefresh(w);
-        }) == ERR)
-      {
-        ret = false;
-        break;
-      }
-      need_update = false;
-    }
-
-    if(string_ready){
-      if(use_win(input_win, [&](WINDOW* w){
-          if(wclear(w) == ERR) return ERR;
-          if(box(w, 0, 0) == ERR) return ERR;
-          return wrefresh(w);
-        }) == ERR)
-      {
-        ret = false;
-        break;
-      }
-      input_buffer += L"\n";
-      if(win_addwstr(output_win, input_buffer.c_str()) == ERR)
-        ret = false;
-      break;
-    }
-  }
-
-  if(*_terminate){
-    return true;
-  }
-
-  return ret;
-}
 
 DWORD WINAPI client_to_server(LPVOID lpParam){
   thread_params_t* params = (thread_params_t*) lpParam;
   SOCKET socket = params->socket;
-  HANDLE stdout_handle = params->stdout_handle;
-  HANDLE stdin_handle = params->stdin_handle;
   HANDLE thread_handles_ready_event = params->terminate_event;
   HANDLE terminate_event = params->terminate_event;
   HANDLE nickname_request_event = params->nickname_request_event;
@@ -505,7 +129,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       break;
 
     case WAIT_OBJECT_0 + 1:
-      if(!win_get_wstr(input_win, output_win, input_buffer,
+      if(!win_get_wstr(input_win, output_win, input_buffer, false,
                        terminate_event, &_terminate) || _terminate){
         if(!_terminate)
           win_addwstr(output_win, L"Error reading nickname from console.\n");
@@ -523,7 +147,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       break;
 
     case WAIT_OBJECT_0 + 2:
-      if(!get_password(stdin_handle, stdout_handle, &pass,
+      if(!win_get_wstr(input_win, output_win, pass, true,
                        terminate_event, &_terminate) || _terminate){
         if(!_terminate)
           win_addwstr(output_win, L"Error reading password from console.\n");
@@ -541,7 +165,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       break;
 
     case WAIT_OBJECT_0 + 3:
-      if(!get_password(stdin_handle, stdout_handle, &pass,
+      if(!win_get_wstr(input_win, output_win, pass, true,
                        terminate_event, &_terminate) || _terminate){
         if(!_terminate)
           win_addwstr(output_win, L"Error reading password from console.\n");
@@ -567,7 +191,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       break;
 
     case WAIT_OBJECT_0 + 4:
-      if(!win_get_wstr(input_win, output_win, pass,
+      if(!win_get_wstr(input_win, output_win, pass, true,
                        terminate_event, &_terminate) || _terminate){
         if(!_terminate)
           win_addwstr(output_win, L"Error reading password from console.\n");
@@ -593,7 +217,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       break;
 
     case WAIT_OBJECT_0 + 5: //authorized
-      if(!win_get_wstr(input_win, output_win, input_buffer,
+      if(!win_get_wstr(input_win, output_win, input_buffer, false,
                         terminate_event, &_terminate) || _terminate){
         if(!_terminate)
           win_addwstr(output_win, L"Error reading from console.");
@@ -711,91 +335,14 @@ DWORD WINAPI server_to_client(LPVOID lpParam){
   }
 }
 
-#define INPUT_WINDOW_ROWS 3
-
-void set_console_font(const wchar_t* font)
-{
-    HANDLE StdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    CONSOLE_FONT_INFOEX info;
-    memset(&info, 0, sizeof(CONSOLE_FONT_INFOEX));
-    info.cbSize = sizeof(CONSOLE_FONT_INFOEX);              // prevents err=87 below
-    if (GetCurrentConsoleFontEx(StdOut, FALSE, &info))
-    {
-        info.FontFamily   = FF_DONTCARE;
-        info.dwFontSize.X = 0;  // leave X as zero
-        info.dwFontSize.Y = 14;
-        info.FontWeight   = 400;
-        wcscpy(info.FaceName, font);
-        if (SetCurrentConsoleFontEx(StdOut, FALSE, &info))
-        {
-        }
-    }
-}
-
 int main()
 {
-  //setlocale(LC_ALL, "ru_RU.utf8");
-  setlocale(LC_ALL, "");
-  //SetConsoleCP(65001);
-  set_console_font(L"Courier New");
+  console_init();
 
-  HANDLE stdout_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-  HANDLE stdin_handle = GetStdHandle(STD_INPUT_HANDLE);
-
-  if(stdin_handle == INVALID_HANDLE_VALUE ||
-     stdout_handle == INVALID_HANDLE_VALUE){
-    cout << "Error getting console handles.\n";
-    return 0;
-  }
-
-  SetConsoleTextAttribute(stdout_handle,
-                          FOREGROUND_GREEN |
-                          FOREGROUND_INTENSITY);
-  SetConsoleTitleW(L"CardBluff");
-
-  WINDOW* input_win;
-  WINDOW* output_win;
-
-  initscr();
-
-  cbreak();             // Immediate key input
-  nonl();               // Get return key
-  timeout(0);           // Non-blocking input
-  keypad(stdscr, 1);    // Fix keypad
-  noecho();             // No automatic printing
-  curs_set(0);          // Hide real cursor
-  intrflush(stdscr, 0); // Avoid potential graphical issues
-  leaveok(stdscr, 1);   // Don't care where cursor is left
-
-  int rows, cols;
-  getmaxyx(stdscr, rows, cols);
-
-  refresh();
-
-  output_win = newwin(rows - INPUT_WINDOW_ROWS, cols, 0, 0);
-  refresh();
-  scrollok(output_win, true);
-
-  input_win = newwin(INPUT_WINDOW_ROWS, cols, rows - INPUT_WINDOW_ROWS, 0);
-  refresh();
-  use_win(input_win, [&](WINDOW* w){
-            if(wclear(w) == ERR) return ERR;
-            if(box(w, 0, 0) == ERR) return ERR;
-            return wrefresh(w);
-          });
-
-  refresh();
-
-  stdin_mutex = CreateMutex(NULL, FALSE, NULL);
-  stdout_mutex = CreateMutex(NULL, FALSE, NULL);
   socket_mutex = CreateMutex(NULL, FALSE, NULL);
 
-  curses_mutex = CreateMutex(NULL, FALSE, NULL);
-
   DWORD poll;
-  int res, i = 1, port = 999;
-  wchar_t buf[256];
-  char msg[256] = "";
+  int res;
   char ip[15];
   WSADATA data;
 
@@ -875,8 +422,6 @@ int main()
   thread_params_t thread_params = {
     NULL,
     NULL,
-    stdout_handle,
-    stdin_handle,
     sock,
     thread_handles_ready_event,
     terminate_event,
@@ -908,9 +453,6 @@ int main()
   CloseHandle(password_request_event);
   CloseHandle(authorized_event);
   CloseHandle(auth_fail_event);
-
-  CloseHandle(stdout_handle);
-  CloseHandle(stdin_handle);
 
   CloseHandle(send_thread);
   CloseHandle(receive_thread);

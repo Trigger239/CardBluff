@@ -530,13 +530,13 @@
 	"common.h"
 	"game.h"
 
-1565715340 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\common.h
+1566139201 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\common.h
 	"util/util.h"
 
 1565715340 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\util.h
 	<string>
 
-1565715340 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\game.h
+1566139201 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\game.h
 	<windows.h>
 	<string>
 	<vector>
@@ -545,7 +545,9 @@
 	<chrono>
 	<iterator>
 	<algorithm>
+	<cwctype>
 	"client.h"
+	"combinations.h"
 
 1565684566 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\strlcpy.h
 	<cstddef>
@@ -568,10 +570,11 @@
 1565684566 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\sqlite\sqlite3.h
 	<stdarg.h>
 
-1565715341 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\game.cpp
+1566141673 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\game.cpp
 	"game.h"
 	"common.h"
 	<cstdio>
+	<cwchar>
 
 1565684565 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\sha256\sha256.cpp
 	<cstring>
@@ -657,7 +660,7 @@
 	<algorithm>
 	"unicode.h"
 
-1566035045 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\main.cpp
+1566139201 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\main.cpp
 	<windows.h>
 	<cstdlib>
 	<cstdio>
@@ -678,6 +681,8 @@
 	"common.h"
 	"util/unicode.h"
 	<cstdio>
+	<io.h>
+	<fcntl.h>
 
 1565684566 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\util\unordered_set_mt.h
 	<unordered_set>
@@ -691,4 +696,13 @@
 	<vector>
 	<algorithm>
 	<cassert>
+
+1566139446 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\combinations.h
+	<vector>
+	<algorithm>
+	<cassert>
+	<cinttypes>
+
+1566139201 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\combinations.cpp
+	"combinations.h"
 

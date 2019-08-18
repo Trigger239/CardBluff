@@ -34,6 +34,8 @@
 			<Add option="-fexceptions" />
 			<Add option="-U__STRICT_ANSI__" />
 			<Add option="-Wformat" />
+			<Add option="-execution-charset=utf8" />
+			<Add option="-finput-charset=cp1251" />
 		</Compiler>
 		<Linker>
 			<Add option="-lws2_32" />
@@ -41,6 +43,8 @@
 		</Linker>
 		<Unit filename="client.cpp" />
 		<Unit filename="client.h" />
+		<Unit filename="combinations.cpp" />
+		<Unit filename="combinations.h" />
 		<Unit filename="common.h" />
 		<Unit filename="database.cpp" />
 		<Unit filename="database.h" />

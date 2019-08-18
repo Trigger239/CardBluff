@@ -42,6 +42,8 @@
 		</Linker>
 		<Unit filename="main.cpp" />
 		<Unit filename="sha256/sha256.cpp" />
+		<Unit filename="text_io.cpp" />
+		<Unit filename="text_io.h" />
 		<Unit filename="util/lambda_to_func.h" />
 		<Unit filename="util/strlcpy.cpp" />
 		<Unit filename="util/strlcpy.h" />
