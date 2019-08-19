@@ -229,6 +229,31 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
       case L'\t':
         break;
 
+      case PADSLASH:
+        if(input_buffer.size() < max_input_length)
+          input_buffer.insert(cursor++, 1, L'/');
+        break;
+
+      case PADPLUS:
+        if(input_buffer.size() < max_input_length)
+          input_buffer.insert(cursor++, 1, L'+');
+        break;
+
+      case PADMINUS:
+        if(input_buffer.size() < max_input_length)
+          input_buffer.insert(cursor++, 1, L'-');
+        break;
+
+      case PADSTAR:
+        if(input_buffer.size() < max_input_length)
+          input_buffer.insert(cursor++, 1, L'*');
+        break;
+
+      case PADSTOP:
+        if(input_buffer.size() < max_input_length)
+          input_buffer.insert(cursor++, 1, L'.');
+        break;
+
       case KEY_BACKSPACE:
       case 127:
       case 8:
@@ -243,6 +268,7 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
         }
         break;
 
+      case PADENTER:
       case KEY_ENTER:
       case L'\r':
       case L'\n':
@@ -250,6 +276,9 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
         string_ready = true;
         break;
       }
+    }
+    else{
+      Sleep(10);
     }
 
     if(!string_ready && need_update){
