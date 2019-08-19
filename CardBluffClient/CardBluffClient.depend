@@ -17,25 +17,27 @@
 	<fstream>
 	"sha256.h"
 
-1565549813 source:d:\cardbluff\cardbluff\cardbluffclient\sha256\sha256.cpp
+1566209164 source:d:\cardbluff\cardbluff\cardbluffclient\sha256\sha256.cpp
 	<cstring>
 	<fstream>
 	"sha256.h"
 
-1565549813 d:\cardbluff\cardbluff\cardbluffclient\sha256\sha256.h
+1566209164 d:\cardbluff\cardbluff\cardbluffclient\sha256\sha256.h
 	<string>
 
-1565549813 source:d:\cardbluff\cardbluff\cardbluffclient\main.cpp
+1566219544 source:d:\cardbluff\cardbluff\cardbluffclient\main.cpp
 	<windows.h>
 	<winsock.h>
 	<iostream>
-	<conio.h>
 	<signal.h>
 	<cstdio>
+	<cctype>
 	"sha256/sha256.h"
 	"util/strlcpy.h"
+	"util/unicode.h"
+	"text_io.h"
 
-1565549813 d:\cardbluff\cardbluff\cardbluffclient\util\strlcpy.h
+1566209164 d:\cardbluff\cardbluff\cardbluffclient\util\strlcpy.h
 	<cstddef>
 
 1566208888 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\main.cpp
@@ -107,4 +109,35 @@
 	<cwchar>
 	<vector>
 	"text_io.h"
+
+1566219544 source:d:\cardbluff\cardbluff\cardbluffclient\text_io.cpp
+	<windows.h>
+	<locale>
+	<string>
+	<cstdio>
+	<cwchar>
+	<vector>
+	"text_io.h"
+
+1566219544 d:\cardbluff\cardbluff\cardbluffclient\text_io.h
+	<functional>
+	"pdcurses/curses.h"
+
+1566209164 d:\cardbluff\cardbluff\cardbluffclient\pdcurses\curses.h
+	<stdarg.h>
+	<stddef.h>
+	<stdio.h>
+	<wchar.h>
+	<stdbool.h>
+
+1566209164 source:d:\cardbluff\cardbluff\cardbluffclient\util\strlcpy.cpp
+	"strlcpy.h"
+
+1566209164 source:d:\cardbluff\cardbluff\cardbluffclient\util\unicode.cpp
+	"unicode.h"
+
+1566209164 d:\cardbluff\cardbluff\cardbluffclient\util\unicode.h
+	<locale>
+	<codecvt>
+	<cwchar>
 

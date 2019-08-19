@@ -344,31 +344,31 @@
 1538327454 source:c:\users\arseniy\documents\кружок\cardbluff\cardbluff\cardbluffserver\util\strlcpy.cpp
 	"strlcpy.h"
 
-1566050466 source:d:\cardbluff\cardbluff\cardbluffserver\database.cpp
+1566209164 source:d:\cardbluff\cardbluff\cardbluffserver\database.cpp
 	"database.h"
 	<cstring>
 	"util/unicode.h"
 
-1566050466 d:\cardbluff\cardbluff\cardbluffserver\database.h
+1566209164 d:\cardbluff\cardbluff\cardbluffserver\database.h
 	<string>
 	"sqlite/sqlite3.h"
 	"common.h"
 
-1566050466 d:\cardbluff\cardbluff\cardbluffserver\sqlite\sqlite3.h
+1566209164 d:\cardbluff\cardbluff\cardbluffserver\sqlite\sqlite3.h
 	<stdarg.h>
 
-1566121782 d:\cardbluff\cardbluff\cardbluffserver\common.h
+1566209164 d:\cardbluff\cardbluff\cardbluffserver\common.h
 	"util/util.h"
 
-1566050466 source:d:\cardbluff\cardbluff\cardbluffserver\sha256\sha256.cpp
+1566209164 source:d:\cardbluff\cardbluff\cardbluffserver\sha256\sha256.cpp
 	<cstring>
 	<fstream>
 	"sha256.h"
 
-1566050466 d:\cardbluff\cardbluff\cardbluffserver\sha256\sha256.h
+1566209164 d:\cardbluff\cardbluff\cardbluffserver\sha256\sha256.h
 	<string>
 
-1566050466 source:d:\cardbluff\cardbluff\cardbluffserver\sqlite\sqlite3.c
+1566209164 source:d:\cardbluff\cardbluff\cardbluffserver\sqlite\sqlite3.c
 	"config.h"
 	<vxWorks.h>
 	<pthread.h>
@@ -426,26 +426,26 @@
 	<ctype.h>
 	<math.h>
 
-1566050466 source:d:\cardbluff\cardbluff\cardbluffserver\util\rand64.cpp
+1566209164 source:d:\cardbluff\cardbluff\cardbluffserver\util\rand64.cpp
 	"Rand64.h"
 	<ctime>
 
-1566050466 d:\cardbluff\cardbluff\cardbluffserver\util\rand64.h
+1566209164 d:\cardbluff\cardbluff\cardbluffserver\util\rand64.h
 	"tr1/random"
 
-1566050466 source:d:\cardbluff\cardbluff\cardbluffserver\util\strlcpy.cpp
+1566209164 source:d:\cardbluff\cardbluff\cardbluffserver\util\strlcpy.cpp
 	"strlcpy.h"
 
-1566050466 d:\cardbluff\cardbluff\cardbluffserver\util\strlcpy.h
+1566209164 d:\cardbluff\cardbluff\cardbluffserver\util\strlcpy.h
 	<cstddef>
 
-1566050466 source:d:\cardbluff\cardbluff\cardbluffserver\client.cpp
+1566209164 source:d:\cardbluff\cardbluff\cardbluffserver\client.cpp
 	"client.h"
 	"util/strlcpy.h"
 	"util/unicode.h"
 	<cstdio>
 
-1566050466 d:\cardbluff\cardbluff\cardbluffserver\client.h
+1566209164 d:\cardbluff\cardbluff\cardbluffserver\client.h
 	<windows.h>
 	<winsock.h>
 	<queue>
@@ -453,7 +453,7 @@
 	"common.h"
 	"game.h"
 
-1566137639 d:\cardbluff\cardbluff\cardbluffserver\game.h
+1566209164 d:\cardbluff\cardbluff\cardbluffserver\game.h
 	<windows.h>
 	<string>
 	<vector>
@@ -466,12 +466,14 @@
 	"client.h"
 	"combinations.h"
 
-1566137612 source:d:\cardbluff\cardbluff\cardbluffserver\game.cpp
+1566219531 source:d:\cardbluff\cardbluff\cardbluffserver\game.cpp
 	"game.h"
 	"common.h"
 	<cstdio>
+	<cwchar>
+	<cwctype>
 
-1566137612 source:d:\cardbluff\cardbluff\cardbluffserver\main.cpp
+1566209164 source:d:\cardbluff\cardbluff\cardbluffserver\main.cpp
 	<windows.h>
 	<cstdlib>
 	<cstdio>
@@ -495,23 +497,23 @@
 	<io.h>
 	<fcntl.h>
 
-1566050466 d:\cardbluff\cardbluff\cardbluffserver\util\unordered_set_mt.h
+1566209164 d:\cardbluff\cardbluff\cardbluffserver\util\unordered_set_mt.h
 	<unordered_set>
 	<windows.h>
 	<cstddef>
 
-1566050466 d:\cardbluff\cardbluff\cardbluffserver\util\util.h
+1566209164 d:\cardbluff\cardbluff\cardbluffserver\util\util.h
 	<string>
 
-1566050466 source:d:\cardbluff\cardbluff\cardbluffserver\util\util.cpp
+1566209164 source:d:\cardbluff\cardbluff\cardbluffserver\util\util.cpp
 	"util.h"
 	<algorithm>
 	"unicode.h"
 
-1566050466 source:d:\cardbluff\cardbluff\cardbluffserver\util\unicode.cpp
+1566209164 source:d:\cardbluff\cardbluff\cardbluffserver\util\unicode.cpp
 	"unicode.h"
 
-1566050466 d:\cardbluff\cardbluff\cardbluffserver\util\unicode.h
+1566209164 d:\cardbluff\cardbluff\cardbluffserver\util\unicode.h
 	<locale>
 	<codecvt>
 	<cwchar>
@@ -690,13 +692,15 @@
 	<windows.h>
 	<cstddef>
 
-1566070230 source:d:\cardbluff\cardbluff\cardbluffserver\combinations.cpp
+1566220128 source:d:\cardbluff\cardbluff\cardbluffserver\combinations.cpp
 	"combinations.h"
 
-1566073524 d:\cardbluff\cardbluff\cardbluffserver\combinations.h
+1566220138 d:\cardbluff\cardbluff\cardbluffserver\combinations.h
 	<vector>
 	<algorithm>
 	<cassert>
+	<cinttypes>
+	<unordered_map>
 
 1566204545 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffserver\combinations.h
 	<vector>

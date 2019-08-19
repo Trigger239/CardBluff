@@ -39,7 +39,6 @@
 		</Compiler>
 		<Linker>
 			<Add option="-lws2_32" />
-			<Add library="ncursesw" />
 		</Linker>
 		<Unit filename="client.cpp" />
 		<Unit filename="client.h" />

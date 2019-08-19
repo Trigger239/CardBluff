@@ -243,9 +243,7 @@ void Game::make_move(Client* client, const std::wstring& command, bool* _termina
 
   std::wstring cws = remove_spaces(command); // command_without_spaces
   std::wstring lcws;                         // lowered_command_without_spaces
-  //std::transform(cws.begin(), cws.end(), lcws.begin(), ::towlower);
-  for(auto it: cws)
-    lcws.push_back(towlower(it));
+  std::transform(cws.begin(), cws.end(), back_inserter(lcws), ::towlower);
 
   if(makes_current_move(client)) {
     if (lcws == L"/r")
@@ -453,7 +451,7 @@ wstring cards_to_string(vector<CARD_TYPE> &cards){
   wchar_t* ptr = str;
   swprintf(ptr, CARDS_PREFIX L"%01u", (unsigned) cards.size());
   ptr += 7;
-  for(int i = 0; i < cards.size(); i++){
+  for(int i = 0; i < ((int)(cards.size())); i++){
     CARD_TYPE value = cards[i] / 4;
     CARD_TYPE suit = cards[i] % 4;
 
