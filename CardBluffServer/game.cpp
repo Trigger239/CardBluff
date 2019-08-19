@@ -214,6 +214,10 @@ void push_client_string_to_client(bool* _terminate, const wstring &str, Client* 
     wstring addend = sender ? USER_PREFIX + sender->get_nickname() + L":" : SERVER_PREFIX;
     receiver->push_string(_terminate, (addend + L" " + str).c_str());
 }
+wstring parse_m_command(const wstring& command, vector<int>& combination)
+{
+
+}
 void Game::make_move(Client* client, const std::wstring& command, bool* _terminate){
   *_terminate = false;
 
@@ -290,7 +294,16 @@ void Game::make_move(Client* client, const std::wstring& command, bool* _termina
     }
     else if (wcsncmp(lcws.c_str(), L"/m", 2) == 0)
     {
+        vector<int> combination;
+        wstring transcript = parse_m_command(lcws, combination);
+        if (transcript == L"")
+        {
 
+        }
+        else
+        {
+
+        }
     }
     //TODO: Parse and process move command
     //TODO: convert this pseudocode to normal code (see also process())
