@@ -9,16 +9,16 @@ New client: Receive thread created
 receive_buffer = nickname:imp
 receive_buffer.size = 12
 New client: Nickname message received: 'imp'
-112 97 115 115 119 111 114 100 58 51 99 56 53 49 55 55 
-50 55 53 55 51 99 97 99 98 97 100 102 101 50 55 51 
-49 48 50 99 52 51 102 50 48 100 55 101 52 48 49 54 
-54 101 48 97 100 51 54 102 102 99 99 48 98 98 98 53 
-99 51 50 53 52 100 100 100 55 receive_buffer_raw = password:3c8517727573cacbadfe273102c43f20d7e40166e0ad36ffcc0bbb5c3254ddd7
-receive_buffer = password:3c8517727573cacbadfe273102c43f20d7e40166e0ad36ffcc0bbb5c3254ddd7
+112 97 115 115 119 111 114 100 58 49 99 97 56 100 98 101 
+56 99 49 99 56 52 56 57 100 55 57 98 55 53 56 99 
+51 50 54 56 101 98 101 55 98 52 55 102 57 55 49 56 
+48 49 55 102 49 48 49 52 48 52 55 48 54 51 57 99 
+51 102 98 57 51 100 101 99 49 receive_buffer_raw = password:1ca8dbe8c1c8489d79b758c3268ebe7b47f9718017f10140470639c3fb93dec1
+receive_buffer = password:1ca8dbe8c1c8489d79b758c3268ebe7b47f9718017f10140470639c3fb93dec1
 receive_buffer.size = 73
-New client 'imp': Password message received: '3c8517727573cacbadfe273102c43f20d7e40166e0ad36ffcc0bbb5c3254ddd7'
+New client 'imp': Password message received: '1ca8dbe8c1c8489d79b758c3268ebe7b47f9718017f10140470639c3fb93dec1'
 Pass from database: '110b6446ba73be5e166a2d4923934d46ef863f055c0dca048a00f471a4b43693'
-Waiting pass: '3c8517727573cacbadfe273102c43f20d7e40166e0ad36ffcc0bbb5c3254ddd7' (salt '6b94077bb04ed97d')
+Waiting pass: '1ca8dbe8c1c8489d79b758c3268ebe7b47f9718017f10140470639c3fb93dec1' (salt 'd9fa2c85f7a3fea7')
 New client 'imp': Password OK
 Client connected
 Send thread created
@@ -28,16 +28,16 @@ New client: Receive thread created
 receive_buffer = nickname:IMP
 receive_buffer.size = 12
 New client: Nickname message received: 'IMP'
-112 97 115 115 119 111 114 100 58 49 50 101 100 54 102 97 
-49 48 98 100 101 55 55 97 97 54 100 98 48 49 57 57 
-53 101 53 102 56 54 57 102 98 54 102 55 102 101 56 54 
-102 52 102 49 100 53 54 57 55 51 53 55 49 55 56 49 
-97 51 48 99 57 55 54 49 51 receive_buffer_raw = password:12ed6fa10bde77aa6db01995e5f869fb6f7fe86f4f1d56973571781a30c97613
-receive_buffer = password:12ed6fa10bde77aa6db01995e5f869fb6f7fe86f4f1d56973571781a30c97613
+112 97 115 115 119 111 114 100 58 49 98 49 98 55 54 100 
+49 54 53 52 56 97 55 97 53 97 100 55 101 51 53 55 
+100 51 56 54 50 57 54 51 54 100 54 99 54 51 51 100 
+48 100 99 49 55 97 54 56 99 102 56 98 53 101 56 54 
+50 56 49 50 54 97 97 55 100 receive_buffer_raw = password:1b1b76d16548a7a5ad7e357d38629636d6c633d0dc17a68cf8b5e8628126aa7d
+receive_buffer = password:1b1b76d16548a7a5ad7e357d38629636d6c633d0dc17a68cf8b5e8628126aa7d
 receive_buffer.size = 73
-New client 'IMP': Password message received: '12ed6fa10bde77aa6db01995e5f869fb6f7fe86f4f1d56973571781a30c97613'
+New client 'IMP': Password message received: '1b1b76d16548a7a5ad7e357d38629636d6c633d0dc17a68cf8b5e8628126aa7d'
 Pass from database: '130229cd36251accf673a6bbd04ae063a6f1f8aa92bda3bec573b679d79f75e5'
-Waiting pass: '12ed6fa10bde77aa6db01995e5f869fb6f7fe86f4f1d56973571781a30c97613' (salt '94c53af208c6c4a9')
+Waiting pass: '1b1b76d16548a7a5ad7e357d38629636d6c633d0dc17a68cf8b5e8628126aa7d' (salt '2fc0faf4856eaae1')
 New client 'IMP': Password OK
 47 102 105 110 100 100 117 101 108 receive_buffer_raw = /findduel
 receive_buffer = /findduel
@@ -49,7 +49,5 @@ Duel found: IMP VS imp
 Generating cards: 5, 5
 Game thread started
 Sending card messages
-47 114 receive_buffer_raw = /r
-receive_buffer = /r
-receive_buffer.size = 2
+Client 5: Disconnected (receive thread)
 Client 4: Disconnected (receive thread)

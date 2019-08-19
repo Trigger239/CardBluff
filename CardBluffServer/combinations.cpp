@@ -431,6 +431,8 @@ bool Hand::check_combination(const vector<int>& comb)
         case SQUARE: return check_four_of_a_kind(comb[1]);
         case STRAIGHT_FLUSH: return check_straight_flush(pair<int, int>(comb[1], comb[2]));
     }
+    assert(false);
+    return false;
 }
 bool Hand::is_combination_nothing(const vector<int>& comb)
 {

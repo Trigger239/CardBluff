@@ -118,6 +118,7 @@ void find_opponent() {
 
           DWORD thread;
           game->set_thread(CreateThread(NULL, 0, game_thread, (LPVOID) game, 0, &thread));
+          SetEvent(game->get_thread_handle_ready_event());
           game->start_round();
 
           return;

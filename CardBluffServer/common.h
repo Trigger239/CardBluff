@@ -12,6 +12,9 @@
 #define EQUALITY_CARD_NUMBER ((uint8_t)(10))
 #define TIE_CARD_NUMBER ((uint8_t)(26))
 
+#define SERVER_PREFIX L"SERVER:"
+#define CARDS_PREFIX L"CARDS:"
+#define USER_PREFIX L"USER "
 
 #define DEFAULT_RATING 1200
 #define MOVE_TIMEOUT 60000

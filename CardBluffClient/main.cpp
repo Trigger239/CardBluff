@@ -303,7 +303,10 @@ DWORD WINAPI server_to_client(LPVOID lpParam){
 
     if(wcscmp(receive_buffer.c_str(), L"") != 0){
       if(WaitForSingleObject(authorized_event, 0) == WAIT_OBJECT_0){
-        win_addwstr(output_win, (L"> " + receive_buffer + L"\n").c_str());
+        wchar_t* buf = new wchar_t(receive_buffer.size() + 1);
+        wcscpy(buf, receive_buffer.c_str());
+        win_addwstr_colored(output_win, buf);
+        delete buf;
       }
       else{
         if(wcscmp(receive_buffer.c_str(), L"password_first?") == 0){
@@ -327,8 +330,13 @@ DWORD WINAPI server_to_client(LPVOID lpParam){
         else if(wcscmp(receive_buffer.c_str(), L"auth_fail!") == 0){
           SetEvent(auth_fail_event);
         }
-        else
-          win_addwstr(output_win, (L"> " + receive_buffer + L"\n").c_str());
+        else{
+          wchar_t* buf = new wchar_t(receive_buffer.size() + 1);
+          wcscpy(buf, receive_buffer.c_str());
+          win_addwstr_colored(output_win, buf);
+          delete buf;
+        }
+          //win_addwstr(output_win, (L"> " + receive_buffer + L"\n").c_str());
           //win_wprintw(output_win, "> %s\n", receive_buffer.c_str());
       }
     }

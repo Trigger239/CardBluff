@@ -120,7 +120,9 @@ bool console_init(void){
     start_color();
     init_pair(COLOR_INPUT_ECHO, COLOR_CYAN, COLOR_BLACK);
     init_pair(COLOR_INPUT_CURSOR, COLOR_BLACK, COLOR_WHITE);
-    init_pair(COLOR_MESSAGE_SERVER, COLOR_RED, COLOR_BLACK);
+    init_pair(COLOR_MESSAGE_SERVER, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(COLOR_HEARTS_DIAMONDS, COLOR_RED, COLOR_BLACK);
+    init_pair(COLOR_SPADES_CLUBS, COLOR_GREEN, COLOR_BLACK);
   }
 
   int rows, cols;
@@ -312,8 +314,10 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
   if(wcsncmp(str, SERVER_PREFIX, wcslen(SERVER_PREFIX)) == 0){
     return use_win(win, [&](WINDOW* w){
               if(wattron(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
-              if(waddwstr(w, str) == ERR) return ERR;
+              if(waddwstr(w, SERVER_PREFIX) == ERR) return ERR;
               if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
+              if(waddwstr(w, str + wcslen(SERVER_PREFIX)) == ERR) return ERR;
+              if(waddwstr(w, L"\n") == ERR) return ERR;
               return wrefresh(w);
             });
   }
@@ -339,19 +343,43 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
     }
 
     return use_win(win, [&](WINDOW* w){
+              if(wattron(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
+              if(waddwstr(w, SERVER_PREFIX L" ") == ERR) return ERR;
+              if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
               if(waddwstr(w, tok) == ERR) return ERR;
               for(auto card: cards){
                 if(waddnwstr(w, L" ", 1) == ERR) return ERR;
                 if(waddnwstr(w, &card.second, 1) == ERR) return ERR;
-                if(card.first < 2)
-                  if(wattron(w, COLOR_PAIR(COLOR_CLUBS_DIAMONDS)) == ERR) return ERR;
-                wchar_t suit = card.first + L'0';
-                if(waddnwstr(w, &suit, 1) == ERR) return ERR;
-                if(card.first < 2)
-                  if(wattroff(w, COLOR_PAIR(COLOR_CLUBS_DIAMONDS)) == ERR) return ERR;
+                switch(card.first){
+                case HEARTS:
+                  if(wattron(w, COLOR_PAIR(COLOR_HEARTS_DIAMONDS)) == ERR) return ERR;
+                  if(waddnwstr(w, L"H", 1) == ERR) return ERR;
+                  if(wattroff(w, COLOR_PAIR(COLOR_HEARTS_DIAMONDS)) == ERR) return ERR;
+                  break;
+
+                case DIAMONDS:
+                  if(wattron(w, COLOR_PAIR(COLOR_HEARTS_DIAMONDS)) == ERR) return ERR;
+                  if(waddnwstr(w, L"D", 1) == ERR) return ERR;
+                  if(wattroff(w, COLOR_PAIR(COLOR_HEARTS_DIAMONDS)) == ERR) return ERR;
+                  break;
+
+                case SPADES:
+                  if(wattron(w, COLOR_PAIR(COLOR_SPADES_CLUBS)) == ERR) return ERR;
+                  if(waddnwstr(w, L"S", 1) == ERR) return ERR;
+                  if(wattroff(w, COLOR_PAIR(COLOR_SPADES_CLUBS)) == ERR) return ERR;
+                  break;
+                }
                 if(waddnwstr(w, L",", 1) == ERR) return ERR;
               }
               if(waddnwstr(w, L"\n", 1) == ERR) return ERR;
+              return wrefresh(w);
+            });
+  }
+  else{
+    return use_win(win, [&](WINDOW* w){
+              if(waddwstr(w, L"> ") == ERR) return ERR;
+              if(waddwstr(w, str) == ERR) return ERR;
+              if(waddwstr(w, L"\n") == ERR) return ERR;
               return wrefresh(w);
             });
   }
