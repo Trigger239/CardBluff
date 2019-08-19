@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cinttypes>
+#include <unordered_map>
 
 using namespace std;
 
@@ -58,6 +59,9 @@ typedef enum
 
 extern const int COMBINATION_SIZE[COMBINATIONS];
 extern const vector<bool> HAS_SUIT;
+extern const unordered_map<wchar_t, rank_t> WCHAR_TO_RANK;
+extern const unordered_map<wchar_t, suit_t> WCHAR_TO_SUIT;
+extern const unordered_map<wchar_t, combination_t> WCHAR_TO_COMBINATION;
 
 class Hand
 {

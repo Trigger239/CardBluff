@@ -1,4 +1,5 @@
 #include "combinations.h"
+
 const int COMBINATION_SIZE[] =
 {
     1,  // NOTHING
@@ -12,6 +13,7 @@ const int COMBINATION_SIZE[] =
 	2,  // FOUR
 	3   // STRAIGHT_FLUSH
 };
+
 const vector<bool> HAS_SUIT =
 {
     false,  // NOTHING
@@ -25,6 +27,49 @@ const vector<bool> HAS_SUIT =
 	false,  // FOUR
 	true    // STRAIGHT_FLUSH
 };
+
+const unordered_map<wchar_t, rank_t> WCHAR_TO_RANK =
+{
+    { L'2', TWO },
+    { L'3', THREE },
+    { L'4', FOUR },
+    { L'5', FIVE },
+    { L'6', SIX },
+    { L'7', SEVEN },
+    { L'8', EIGHT },
+    { L'9', NINE },
+    { L'0', TEN },
+    { L'J', JACK },
+    { L'j', JACK },
+    { L'Q', QUEEN },
+    { L'q', QUEEN },
+    { L'K', KING },
+    { L'k', KING },
+    { L'A', ACE },
+    { L'a', ACE },
+};
+
+const unordered_map<wchar_t, suit_t> WCHAR_TO_SUIT =
+{
+    { L'0', HEARTS },
+    { L'1', DIAMONDS },
+    { L'2', SPADES },
+    { L'3', CLUBS }
+};
+
+const unordered_map<wchar_t, combination_t> WCHAR_TO_COMBINATION =
+{
+    { L'0', HIGH_CARD },
+    { L'1', PAIR },
+    { L'2', TWO_PAIRS },
+    { L'3', SET },
+    { L'4', STRAIGHT },
+    { L'5', FLUSH },
+    { L'6', FULL_HOUSE},
+    { L'7', SQUARE },
+    { L'8', STRAIGHT_FLUSH }
+};
+
 Hand::Hand()
 {
     suit_rank.resize(SUITS);
