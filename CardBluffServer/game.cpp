@@ -480,7 +480,7 @@ wstring cards_to_string(vector<CARD_TYPE> &cards){
   return wstring(str);
 }
 void Game::send_card_messages_to_one_player(bool* _terminate, Client* client){
-  push_client_string_to_client(_terminate, L"Cards", client);
+  push_client_string_to_client(_terminate, L"Cards:", client);
     if(_terminate != nullptr && *_terminate){
       return;
     }

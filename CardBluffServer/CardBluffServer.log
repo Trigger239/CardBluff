@@ -1,3 +1,86 @@
 208 160 194 176 208 160 194 177 208 160 208 134 0 
 2: Waiting for client
 Opponent finding thread started
+Client connected
+Send thread created
+Waiting for client
+New client: Receive thread created
+110 105 99 107 110 97 109 101 58 105 109 112 receive_buffer_raw = nickname:imp
+receive_buffer = nickname:imp
+receive_buffer.size = 12
+New client: Nickname message received: 'imp'
+112 97 115 115 119 111 114 100 58 51 48 57 99 98 97 48 
+57 53 49 56 57 50 52 49 54 52 102 99 54 57 53 102 
+101 97 55 100 99 57 98 56 48 54 55 101 98 51 50 56 
+98 57 52 54 101 53 55 99 99 98 102 98 102 49 57 101 
+49 98 51 50 48 97 101 49 57 receive_buffer_raw = password:309cba09518924164fc695fea7dc9b8067eb328b946e57ccbfbf19e1b320ae19
+receive_buffer = password:309cba09518924164fc695fea7dc9b8067eb328b946e57ccbfbf19e1b320ae19
+receive_buffer.size = 73
+New client 'imp': Password message received: '309cba09518924164fc695fea7dc9b8067eb328b946e57ccbfbf19e1b320ae19'
+Pass from database: '110b6446ba73be5e166a2d4923934d46ef863f055c0dca048a00f471a4b43693'
+Waiting pass: '309cba09518924164fc695fea7dc9b8067eb328b946e57ccbfbf19e1b320ae19' (salt '6a444da9fad96fd8')
+New client 'imp': Password OK
+Client connected
+Send thread created
+Waiting for client
+New client: Receive thread created
+110 105 99 107 110 97 109 101 58 73 77 80 receive_buffer_raw = nickname:IMP
+receive_buffer = nickname:IMP
+receive_buffer.size = 12
+New client: Nickname message received: 'IMP'
+112 97 115 115 119 111 114 100 58 98 48 101 54 52 102 55 
+102 97 49 100 48 54 51 50 57 56 49 56 51 48 56 49 
+56 54 55 101 54 100 97 99 52 56 53 53 50 50 54 99 
+48 52 49 98 102 97 54 57 97 48 99 56 50 97 102 51 
+97 54 57 56 56 101 53 51 56 receive_buffer_raw = password:b0e64f7fa1d063298183081867e6dac4855226c041bfa69a0c82af3a6988e538
+receive_buffer = password:b0e64f7fa1d063298183081867e6dac4855226c041bfa69a0c82af3a6988e538
+receive_buffer.size = 73
+New client 'IMP': Password message received: 'b0e64f7fa1d063298183081867e6dac4855226c041bfa69a0c82af3a6988e538'
+Pass from database: '130229cd36251accf673a6bbd04ae063a6f1f8aa92bda3bec573b679d79f75e5'
+Waiting pass: 'c6df52c357bb0631d382292573528c2a1510803976d9f21025f4d71101d1184b' (salt '56ac569e59abcd9a')
+New client 'IMP': Wrong password
+Send thread for client 0 terminated
+New client 'IMP': Receive thread terminated
+Client connected
+Waiting for client
+New client: Receive thread created
+Send thread created
+110 105 99 107 110 97 109 101 58 73 77 80 receive_buffer_raw = nickname:IMP
+receive_buffer = nickname:IMP
+receive_buffer.size = 12
+New client: Nickname message received: 'IMP'
+112 97 115 115 119 111 114 100 58 57 100 51 98 102 97 57 
+97 98 100 101 99 56 56 54 57 48 48 50 57 49 54 49 
+57 57 99 50 100 99 53 97 53 99 50 51 99 50 55 50 
+54 49 48 52 57 99 52 55 54 48 48 101 50 100 56 48 
+101 102 101 98 98 48 52 55 53 receive_buffer_raw = password:9d3bfa9abdec8869002916199c2dc5a5c23c27261049c47600e2d80efebb0475
+receive_buffer = password:9d3bfa9abdec8869002916199c2dc5a5c23c27261049c47600e2d80efebb0475
+receive_buffer.size = 73
+New client 'IMP': Password message received: '9d3bfa9abdec8869002916199c2dc5a5c23c27261049c47600e2d80efebb0475'
+Pass from database: '130229cd36251accf673a6bbd04ae063a6f1f8aa92bda3bec573b679d79f75e5'
+Waiting pass: '9d3bfa9abdec8869002916199c2dc5a5c23c27261049c47600e2d80efebb0475' (salt '720f93ebf2890a86')
+New client 'IMP': Password OK
+47 102 105 110 100 100 117 101 108 receive_buffer_raw = /findduel
+receive_buffer = /findduel
+receive_buffer.size = 9
+47 102 105 110 100 100 117 101 108 receive_buffer_raw = /findduel
+receive_buffer = /findduel
+receive_buffer.size = 9
+Duel found: IMP VS imp
+Generating cards: 5, 5
+Game thread started
+Sending card messages
+47 109 receive_buffer_raw = /m
+receive_buffer = /m
+receive_buffer.size = 2
+47 109 receive_buffer_raw = /m
+receive_buffer = /m
+receive_buffer.size = 2
+Client 4: Disconnected (receive thread)
+Client 5: Disconnected (receive thread)
+Send thread for client 4 terminated
+Finishing the game...
+Game thread terminated
+Client 4: Receive thread terminated
+Send thread for client 5 terminated
+Client 5: Receive thread terminated

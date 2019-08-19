@@ -13,10 +13,12 @@
 #define COLOR_MESSAGE_SERVER 4
 #define COLOR_HEARTS_DIAMONDS 5
 #define COLOR_SPADES_CLUBS 6
+#define COLOR_MESSAGE_ERROR 5
 
 #define SERVER_PREFIX L"SERVER:"
 #define CARDS_PREFIX L"CARDS:"
 #define USER_PREFIX L"USER "
+#define ERROR_PREFIX L"ERROR:"
 
 typedef enum
 {
@@ -43,8 +45,7 @@ int win_addwstr(WINDOW* win, const wchar_t* str);
 int win_wprintw(WINDOW* win, const char* format, ...);
 bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
                   std::wstring &str, bool hide_input,
-                  HANDLE terminate_event,
-                  bool* _terminate = nullptr);
+                  bool* input_ready);
 
 int win_addwstr_colored(WINDOW* win, wchar_t* str);
 

@@ -29,6 +29,7 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-std=c++11" />
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add option="-ffunction-sections" />
@@ -39,7 +40,7 @@
 		<Linker>
 			<Add option="-lws2_32" />
 			<Add option="-gc-sections" />
-			<Add library="pdcurses/wincon/pdcurses.a" />
+			<Add library="pdcurses\wincon\pdcurses.a" />
 		</Linker>
 		<Unit filename="main.cpp" />
 		<Unit filename="sha256/sha256.cpp" />

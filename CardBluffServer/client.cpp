@@ -66,17 +66,17 @@ Client::Client(const SOCKET& socket)
 
 Client::~Client(){
   wait_mutex();
-  Game* g = get_game();
-  if(g != nullptr){
-    set_game(nullptr);
-    delete g;
-
-    Client* opp = get_opponent();
-    if(opp != nullptr){
-      opp->set_game(nullptr);
-      opp->set_opponent(nullptr);
-    }
-  }
+//  Game* g = get_game();
+//  if(g != nullptr){
+//    set_game(nullptr);
+//    delete g;
+//
+//    Client* opp = get_opponent();
+//    if(opp != nullptr){
+//      opp->set_game(nullptr);
+//      opp->set_opponent(nullptr);
+//    }
+//  }
   CloseHandle(mutex);
   CloseHandle(send_queue_mutex);
   CloseHandle(reconnect_event);

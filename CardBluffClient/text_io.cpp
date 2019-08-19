@@ -179,22 +179,18 @@ int win_wprintw(WINDOW* win, const char* format, ...){
 
 bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
                   std::wstring &str, bool hide_input,
-                  HANDLE terminate_event,
-                  bool* _terminate){
-  *_terminate = false;
+                  bool* input_ready){
+  //*_terminate = false;
 
-  std::wstring input_buffer;
-  unsigned int cursor = 0;
+  static std::wstring input_buffer;
+  static unsigned int cursor = 0;
   bool string_ready = false;
+
   bool need_update = true;
   bool ret = true;
 
-  while(true){
-    if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-      *_terminate = true;
-      break;
-    }
-
+  do{
+  //while(true){
     wchar_t c;
     //int res = getch((wint_t*) &c);
     c = getch();
@@ -274,6 +270,7 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
       case L'\n':
         str = input_buffer;
         string_ready = true;
+        *input_ready = true;
         break;
       }
     }
@@ -330,9 +327,11 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
       break;
     }
   }
+  while(0);
 
-  if(*_terminate){
-    return true;
+  if(string_ready){
+    input_buffer = L"";
+    cursor = 0;
   }
 
   return ret;
@@ -364,7 +363,10 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
       return ERR;
     }
     for(unsigned int i = 0; i < card_number; i++){
-      tok = wcstok_r(nullptr, L":", &st);
+      if(i != card_number - 1)
+        tok = wcstok_r(nullptr, L":", &st);
+      else
+        tok = st;
       if(tok == nullptr ||
          swscanf(tok, L"%u,%lc", &suit, &value) != 2)
         return ERR;
@@ -407,6 +409,15 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
                 if(&card != &cards.back()) if(waddwstr(w, L", ") == ERR) return ERR;
               }
               if(waddnwstr(w, L"\n", 1) == ERR) return ERR;
+              return wrefresh(w);
+            });
+  }
+  if(wcsncmp(str, ERROR_PREFIX, wcslen(ERROR_PREFIX)) == 0){
+    return use_win(win, [&](WINDOW* w){
+              if(wattron(w, COLOR_PAIR(COLOR_MESSAGE_ERROR)) == ERR) return ERR;
+              if(waddwstr(w, str) == ERR) return ERR;
+              if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
+              if(waddwstr(w, L"\n") == ERR) return ERR;
               return wrefresh(w);
             });
   }
