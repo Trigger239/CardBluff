@@ -38,7 +38,7 @@
 1565549813 d:\cardbluff\cardbluff\cardbluffclient\util\strlcpy.h
 	<cstddef>
 
-1566206048 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\main.cpp
+1566208888 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\main.cpp
 	<windows.h>
 	<winsock.h>
 	<iostream>
@@ -95,11 +95,11 @@
 1565992377 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\ncurses\include\unctrl.h
 	<curses.h>
 
-1566205761 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\text_io.h
+1566218325 c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\text_io.h
 	<functional>
 	"pdcurses/curses.h"
 
-1566206127 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\text_io.cpp
+1566208210 source:c:\users\arseniy\documents\programming\cardbluff\cardbluff\cardbluffclient\text_io.cpp
 	<windows.h>
 	<locale>
 	<string>

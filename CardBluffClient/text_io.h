@@ -26,6 +26,11 @@ typedef enum
 	CLUBS		= 3
 } suit_t;
 
+#define HEARTS_CHAR L"\x2665"
+#define DIAMONDS_CHAR L"\x2666"
+#define SPADES_CHAR L"\x2660"
+#define CLUBS_CHAR L"\x2663"
+
 #define INPUT_WINDOW_ROWS 3
 
 extern WINDOW* input_win;
