@@ -33,12 +33,13 @@
 			<Add option="-fexceptions" />
 			<Add option="-ffunction-sections" />
 			<Add option="-fdata-sections" />
+			<Add option="-U__STRICT_ANSI__" />
 			<Add directory="ncurses/include" />
 		</Compiler>
 		<Linker>
 			<Add option="-lws2_32" />
 			<Add option="-gc-sections" />
-			<Add library="pdcurses\wincon\pdcurses.a" />
+			<Add library="pdcurses/wincon/pdcurses.a" />
 		</Linker>
 		<Unit filename="main.cpp" />
 		<Unit filename="sha256/sha256.cpp" />
