@@ -279,6 +279,11 @@ std::wstring Client::get_nickname(){
   return get_var(nickname);
 }
 
+std::wstring Client::get_nickname_with_color()
+{
+    return COLOR_ESCAPE + get_nickname() + COLOR_ESCAPE;
+}
+
 void Client::set_id(long long _id){
   set_var(id, _id);
 }

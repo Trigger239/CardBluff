@@ -2,30 +2,10 @@
 2: Waiting for client
 Opponent finding thread started
 Client connected
-Send thread created
 Waiting for client
+Send thread created
 New client: Receive thread created
-New client: Nickname message received: 'imp'
-New client 'imp': Password message received: '629731ad64aac4468db594498446b1f3ebaa78542b5643b5555b92a935fe3857'
-Pass from database: '110b6446ba73be5e166a2d4923934d46ef863f055c0dca048a00f471a4b43693'
-Waiting pass: '629731ad64aac4468db594498446b1f3ebaa78542b5643b5555b92a935fe3857' (salt 'c35a1c602adc225f')
-New client 'imp': Password OK
 Client connected
-Send thread created
 Waiting for client
+Send thread created
 New client: Receive thread created
-New client: Nickname message received: 'IMP'
-New client 'IMP': Password message received: '5635f1c28242b20fb93cb7c69aadb791b89cad3062290347c0a1658b91d4326e'
-Pass from database: '130229cd36251accf673a6bbd04ae063a6f1f8aa92bda3bec573b679d79f75e5'
-Waiting pass: '5635f1c28242b20fb93cb7c69aadb791b89cad3062290347c0a1658b91d4326e' (salt 'b4bc8218dc9df23d')
-New client 'IMP': Password OK
-Duel found: IMP VS imp
-Game thread started
-Generating cards: 5, 5
-Sending card messages
-Sending card messages to both players
-Sending card numbers to both players
-Finishing the game...
-Game thread terminated
-Client 4: Disconnected (receive thread)
-Client 5: Disconnected (receive thread)

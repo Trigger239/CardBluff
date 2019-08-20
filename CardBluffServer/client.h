@@ -48,6 +48,7 @@ public:
   void set_nickname(const std::wstring& _nickname);
   void set_nickname(const wchar_t* _nickname);
   std::wstring get_nickname();
+  std::wstring get_nickname_with_color();
 
   void set_id(long long _id);
   long long get_id();

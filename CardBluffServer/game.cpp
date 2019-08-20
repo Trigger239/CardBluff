@@ -85,8 +85,8 @@ void Game::process(bool* _terminate){
   if(!finished){
     if(chrono::duration_cast<chrono::duration<double>>(now - move_start_time).count() * 1000.0 > MOVE_TIMEOUT){
 
-      push_client_string_to_client(COLOR_ESCAPE + get_currently_moving_player()->get_nickname() + COLOR_ESCAPE L", you haven't done your move in time!", get_currently_moving_player());
-      push_client_string_to_client(COLOR_ESCAPE + get_currently_moving_player()->get_nickname() + COLOR_ESCAPE L" haven't done his move in time!", get_currently_not_moving_player());
+      push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L", you haven't done your move in time!", get_currently_moving_player());
+      push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L" haven't done his move in time!", get_currently_not_moving_player());
 
       if(first_player_card_number == START_CARD_NUMBER &&
          second_player_card_number == START_CARD_NUMBER){
@@ -209,12 +209,12 @@ uint8_t Game::game_result() const
 // TODO: use everywhere the two following functions
 void Game::push_client_string_to_both(const wstring &str, Client* cl = nullptr)
 {
-    wstring addend = cl ? USER_PREFIX COLOR_ESCAPE + cl->get_nickname() + COLOR_ESCAPE L":" : SERVER_PREFIX;
+    wstring addend = cl ? USER_PREFIX + cl->get_nickname_with_color() + L':' : SERVER_PREFIX;
     push_string_to_both(addend + L' ' + str);
 }
 void Game::push_client_string_to_client(const wstring &str, Client* receiver, Client* sender)
 {
-    wstring addend = sender ? USER_PREFIX COLOR_ESCAPE + sender->get_nickname() + COLOR_ESCAPE L":" : SERVER_PREFIX;
+    wstring addend = sender ? USER_PREFIX + sender->get_nickname_with_color() + L":" : SERVER_PREFIX;
     receiver->push_string((addend + L' ' + str).c_str());
 }
 void Game::make_move(Command cmd){
@@ -232,7 +232,7 @@ void Game::make_move(Command cmd){
       push_client_string_to_client(lcws, client == first_player ? second_player : first_player, client);
 
       push_client_string_to_client(SERVER_PREFIX L"You conceded!", client);
-      push_client_string_to_client(SERVER_PREFIX COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L" conceded!",
+      push_client_string_to_client(SERVER_PREFIX + client->get_nickname_with_color() + L" conceded!",
                                    client == first_player ? second_player : first_player);
 
       report_round_results(client == first_player ? FIRST_PLAYER_LOST_GAME : SECOND_PLAYER_LOST_GAME);
@@ -248,17 +248,17 @@ void Game::make_move(Command cmd){
     if (lcws == L"/r")
     {
         if (Hand::is_combination_nothing(current_combination))
-            push_client_string_to_client(COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L", запрещено вскрываться на первом ходу.", client); // TODO: ENGLISH
+            push_client_string_to_client(client->get_nickname_with_color() + L", запрещено вскрываться на первом ходу.", client); // TODO: ENGLISH
         else if (union_of_cards.check_combination(current_combination))
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_client_string_to_both(COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L", здесь есть эта комбинация."); // TODO: ENGLISH
+            push_client_string_to_both(client->get_nickname_with_color() + L", здесь есть эта комбинация."); // TODO: ENGLISH
             player_loses_round(current_move);
         }
         else
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_client_string_to_both(COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L", здесь нет этой комбинации."); // TODO: ENGLISH
+            push_client_string_to_both(client->get_nickname_with_color() + L", здесь нет этой комбинации."); // TODO: ENGLISH
             player_loses_round(negation(current_move));
         }
     }
@@ -266,23 +266,23 @@ void Game::make_move(Command cmd){
     {
         //push_client_string_to_client(cws, client, get_currently_not_moving_player());
         if (Hand::is_combination_nothing(current_combination))
-            push_client_string_to_client(COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L", запрещено блокировать на первом ходу.", client); // TODO: ENGLISH
+            push_client_string_to_client(client->get_nickname_with_color() + L", запрещено блокировать на первом ходу.", client); // TODO: ENGLISH
         else if (union_of_cards.is_best_combination(current_combination))
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_string_to_both(SERVER_PREFIX L" " COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L", это лучшая комбинация."); // TODO: ENGLISH
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", это лучшая комбинация."); // TODO: ENGLISH
             tie_in_round();
         }
         else if (union_of_cards.check_combination(current_combination))
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_string_to_both(SERVER_PREFIX L" " COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L", этой комбинации здесь нет."); // TODO: ENGLISH
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", этой комбинации здесь нет."); // TODO: ENGLISH
             player_loses_round(current_move);
         }
         else
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_string_to_both(SERVER_PREFIX L" " COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L", это не лучшая комбинация."); // TODO: ENGLISH
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", это не лучшая комбинация."); // TODO: ENGLISH
                                                                                                                     // TODO: Write the best combination
             player_loses_round(current_move);
         }
@@ -303,12 +303,12 @@ void Game::make_move(Command cmd){
             }
             else
             {
-                push_string_to_both(SERVER_PREFIX L" " COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L", текущая комбинация не хуже введённой вами."); // TODO: ENGLISH
+                push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", текущая комбинация не хуже введённой вами."); // TODO: ENGLISH
             }
         }
         else
         {
-            push_string_to_both(SERVER_PREFIX L" " COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L", " + transcript + L'.'); // TODO: ENGLISH
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", " + transcript + L'.'); // TODO: ENGLISH
         }
     }
 
@@ -339,8 +339,8 @@ void Game::finish(const RoundResult& res){
 
 void Game::send_next_move_prompts(){
   wchar_t buf[100];
-  swprintf(buf, (wstring() + SERVER_PREFIX L" %" COLOR_ESCAPE L"%ls%" COLOR_ESCAPE L", you have %u seconds to move.").c_str(),
-                  get_currently_moving_player()->get_nickname().c_str(),
+  swprintf(buf, (wstring() + SERVER_PREFIX L" %ls, you have %u seconds to move.").c_str(),
+                  get_currently_moving_player()->get_nickname_with_color().c_str(),
                   (unsigned int) (MOVE_TIMEOUT / 1000));
     get_currently_moving_player()->
       push_string(buf);
@@ -383,8 +383,8 @@ wstring cards_to_string(vector<CARD_TYPE> &cards){
 }
 void Game::send_card_messages_to_one_player(Client* client){
   push_client_string_to_client(L"Cards:", client);
-  client->push_string(cards_to_string(first_player_cards) + COLOR_ESCAPE + first_player->get_nickname() + COLOR_ESCAPE L": ");
-  client->push_string(cards_to_string(second_player_cards) + COLOR_ESCAPE + second_player->get_nickname() + COLOR_ESCAPE L": ");
+  client->push_string(cards_to_string(first_player_cards) + first_player->get_nickname_with_color() + L": ");
+  client->push_string(cards_to_string(second_player_cards) + second_player->get_nickname_with_color() + L": ");
 }
 void Game::send_card_messages_to_both_players(){
   log("Sending card messages to both players\n");
@@ -403,7 +403,7 @@ void Game::send_card_numbers_to_both_players(const RoundResult& res)
     std::wstring zero_line, first_line, second_line;
     zero_line = L"Number of cards:";
 
-    first_line = COLOR_ESCAPE + first_player->get_nickname() + COLOR_ESCAPE L": ";
+    first_line = first_player->get_nickname_with_color() + L": ";
     if (res == FIRST_PLAYER_LOST_GAME)
         first_line += L"Lost";
     else
@@ -415,7 +415,7 @@ void Game::send_card_numbers_to_both_players(const RoundResult& res)
             first_line += L" :facepalm:";
     }
 
-    second_line = COLOR_ESCAPE + second_player->get_nickname() + COLOR_ESCAPE L": ";
+    second_line = second_player->get_nickname_with_color() + L": ";
     if (res == SECOND_PLAYER_LOST_GAME)
         second_line += L"Lost";
     else
