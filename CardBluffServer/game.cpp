@@ -149,7 +149,6 @@ void Game::generate_cards()
 void Game::player_loses_round(const CurrentMove& cur)
 {
     ++card_number[cur];
-    alternate_first_move();
     RoundResult res;
     switch (game_result())
     {
@@ -227,7 +226,7 @@ void Game::make_move(Command cmd){
 
   wstring command = cmd.cmd;
   Client* client = cmd.sender;
-  std::wstring cws = remove_spaces(cmd.cmd); // command_without_spaces
+  std::wstring cws = remove_space_characters(cmd.cmd); // command_without_spaces
   std::wstring lcws;                         // lowered_command_without_spaces
   std::transform(cws.begin(), cws.end(), back_inserter(lcws), ::towlower);
 
@@ -350,7 +349,7 @@ void Game::send_next_move_prompts(){
                   get_currently_moving_player()->get_nickname_with_color().c_str(),
                   (unsigned int) (MOVE_TIMEOUT / 1000));
     get_currently_moving_player()->
-      push_string(buf);
+      push_string(wstring() + buf);
     get_currently_not_moving_player()->
       push_string(SERVER_PREFIX L" Waiting your opponent to move...");
 }

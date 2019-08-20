@@ -24,11 +24,11 @@ std::wstring ll_to_wstring(long long a)
 	return converter.from_bytes(ll_to_string(a));
 }
 
-std::wstring remove_spaces(const std::wstring& str)
+std::wstring remove_space_characters(const std::wstring& str)
 {
     std::wstring ans;
     for (auto it = str.begin(); it != str.end(); ++it)
-        if (*it != L' ')
+        if ((*it != L' ') && (*it != L'\t'))
             ans.push_back(*it);
     return ans;
 }
