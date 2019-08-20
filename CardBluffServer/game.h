@@ -138,6 +138,7 @@ private:
   void send_card_messages_to_one_player(Client* client);
   void push_string_to_both(const wstring &str);
   void send_card_numbers_to_one_player(Client* client, const wstring& zero_line, const wstring& first_line, const wstring& second_line);
+  double get_remaining_move_time(chrono::high_resolution_clock::time_point now = chrono::high_resolution_clock::now());
 };
 
 #endif // GAME_H
