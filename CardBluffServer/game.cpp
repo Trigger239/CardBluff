@@ -145,14 +145,7 @@ void Game::generate_cards()
     union_of_cards = Hand(my_cards);
 }
 
-std::wstring remove_spaces(const std::wstring& str)
-{
-    std::wstring ans;
-    for (auto it = str.begin(); it != str.end(); ++it)
-        if (*it != L' ')
-            ans.push_back(*it);
-    return ans;
-}
+
 void Game::player_loses_round(const CurrentMove& cur)
 {
     ++card_number[cur];
@@ -222,10 +215,6 @@ void Game::push_client_string_to_client(const wstring &str, Client* receiver, Cl
 {
     wstring addend = sender ? USER_PREFIX + sender->get_nickname() + L":" : SERVER_PREFIX;
     receiver->push_string((addend + L" " + str).c_str());
-}
-wstring parse_m_command(const wstring& command, vector<int>& combination)
-{
-
 }
 void Game::make_move(Command cmd){
   assert(cmd.type == MOVE_COMMAND);
@@ -301,20 +290,28 @@ void Game::make_move(Command cmd){
     else if (wcsncmp(lcws.c_str(), L"/m", 2) == 0)
     {
         vector<int> combination;
-        wstring transcript = parse_m_command(lcws, combination);
+        push_client_string_to_client(cws, client, get_currently_not_moving_player());
+        wstring transcript = Hand::parse_m_command(lcws.substr(2, ((int)((cws).size())) - 2), combination);
         if (transcript == L"")
         {
-
+            if (Hand::less_combination(current_combination, combination))
+            {
+                // Prepare for the next move
+                current_combination = combination;
+                alternate_current_move();
+                send_next_move_prompts();
+            }
+            else
+            {
+                push_string_to_both(SERVER_PREFIX L" " + client->get_nickname() + L", текущая комбинация не хуже введённой вами."); // TODO: ENGLISH
+            }
         }
         else
         {
-
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname() + transcript + L'.'); // TODO: ENGLISH
         }
     }
 
-    //Prepare the next move
-    alternate_current_move();
-    send_next_move_prompts();
   }
   else{
     get_currently_not_moving_player()->
