@@ -149,6 +149,7 @@ void Game::generate_cards()
 void Game::player_loses_round(const CurrentMove& cur)
 {
     ++card_number[cur];
+    alternate_first_move();
     RoundResult res;
     switch (game_result())
     {
@@ -209,12 +210,12 @@ uint8_t Game::game_result() const
 void Game::push_client_string_to_both(const wstring &str, Client* cl = nullptr)
 {
     wstring addend = cl ? USER_PREFIX + cl->get_nickname() + L":" : SERVER_PREFIX;
-    push_string_to_both(addend + L": " + str);
+    push_string_to_both(addend + L' ' + str);
 }
 void Game::push_client_string_to_client(const wstring &str, Client* receiver, Client* sender)
 {
     wstring addend = sender ? USER_PREFIX + sender->get_nickname() + L":" : SERVER_PREFIX;
-    receiver->push_string((addend + L" " + str).c_str());
+    receiver->push_string((addend + L' ' + str).c_str());
 }
 void Game::make_move(Command cmd){
   assert(cmd.type == MOVE_COMMAND);
