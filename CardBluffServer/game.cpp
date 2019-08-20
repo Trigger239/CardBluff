@@ -86,7 +86,7 @@ void Game::process(bool* _terminate){
     if(chrono::duration_cast<chrono::duration<double>>(now - move_start_time).count() * 1000.0 > MOVE_TIMEOUT){
 
       push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L", you haven't done your move in time!", get_currently_moving_player());
-      push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L" haven't done his move in time!", get_currently_not_moving_player());
+      push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L" hasn't done the move in time!", get_currently_not_moving_player());
 
       if(first_player_card_number == START_CARD_NUMBER &&
          second_player_card_number == START_CARD_NUMBER){
