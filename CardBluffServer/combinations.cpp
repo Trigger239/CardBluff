@@ -28,6 +28,21 @@ const vector<bool> HAS_SUIT =
 	true    // STRAIGHT_FLUSH
 };
 
+
+extern const vector<uint8_t> HOW_MANY_RANKS =
+{
+    0,  // NOTHING
+	1,  // HIGH_CARD
+	1,  // PAIR
+	2,  // TWO_PAIRS
+	1,  // THREE
+	1,  // STRAIGHT
+	1,   // FLUSH
+	2,  // FULL_HOUSE
+	1,  // FOUR
+	1    // STRAIGHT_FLUSH
+};
+
 const unordered_map<wchar_t, rank_t> WCHAR_TO_RANK =
 {
     { L'2', TWO },
@@ -497,4 +512,69 @@ void Hand::remove_suit(vector<int>& comb)
     clever_asserts(comb);
     if (HAS_SUIT[comb.front()])
         comb.pop_back();
+}
+wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
+{
+    static const wstring MISSING_COMBINATION = L"missing combination identifier";
+    static const wstring INCORRECT_COMBINATION = L"incorrect combination identifier: ";
+    static const wstring MISSING_RANK = L"missing rank identifier";
+    static const wstring INCORRECT_RANK = L"incorrect rank identifier: ";
+    static const wstring MISSING_SUIT = L"missing suit identifier";
+    static const wstring INCORRECT_SUIT = L"incorrect suit identifier: ";
+
+    int number_of_symbol = 0;
+
+    if (((int)((command).size())) <= number_of_symbol)
+        return MISSING_COMBINATION;
+    auto it_combination = WCHAR_TO_COMBINATION.find(command[number_of_symbol]);
+    if (it_combination == WCHAR_TO_COMBINATION.end())
+        return INCORRECT_COMBINATION + L'\'' + command[number_of_symbol] + L'\'';
+    uint8_t combination_type = it_combination->second;
+    combination.push_back(combination_type);
+    uint8_t number_of_ranks = HOW_MANY_RANKS[combination_type];
+
+    for (int i = 0; i < number_of_ranks; ++i)
+    {
+        number_of_symbol = 1 + i;
+        if (((int)((command).size())) <= number_of_symbol)
+            return MISSING_RANK;
+        auto it_rank = WCHAR_TO_RANK.find(command[number_of_symbol]);
+        if (it_rank == WCHAR_TO_RANK.end())
+            return INCORRECT_RANK + L'\'' + command[number_of_symbol] + L'\'';
+        uint8_t rank = it_rank->second;
+        combination.push_back(rank);
+    }
+
+    if (HAS_SUIT[combination_type])
+    {
+        number_of_symbol = 1 + number_of_ranks;
+        if (((int)((command).size())) <= number_of_symbol)
+            return MISSING_SUIT;
+        auto it_suit = WCHAR_TO_SUIT.find(command[number_of_symbol]);
+        if (it_suit == WCHAR_TO_SUIT.end())
+            return INCORRECT_SUIT + L'\'' + command[number_of_symbol] + L'\'';
+        uint8_t suit = it_suit->second;
+        combination.push_back(suit);
+    }
+
+    if (combination_type == TWO_PAIRS)
+        sort(combination.begin() + 1, combination.begin() + 2);
+
+    return L"";
+}
+
+bool Hand::less_combination(vector<int> u, vector<int> v)
+{
+    clever_asserts(u);
+    clever_asserts(v);
+    if (HAS_SUIT[u.front()])
+            u.pop_back();
+    if (u.front() == FLUSH)
+        u.back() = -u.back();
+    if (HAS_SUIT[v.front()])
+            v.pop_back();
+    if (v.front() == FLUSH)
+        v.back() = -v.back();
+
+    return u < v;
 }

@@ -499,7 +499,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
         break;
 
       case IN_GAME:
-        if(wcsncmp(receive_buffer.c_str(), L"/", 1) != 0){ //not a command
+        if(wcsncmp(remove_spaces(receive_buffer).c_str(), L"/", 1) != 0){ //not a command
           client->get_opponent()->push_string(client->get_nickname() + L":" +  receive_buffer);
         }
         else if(wcscmp(receive_buffer.c_str(), L"/help") == 0){

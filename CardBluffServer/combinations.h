@@ -59,6 +59,7 @@ typedef enum
 
 extern const int COMBINATION_SIZE[COMBINATIONS];
 extern const vector<bool> HAS_SUIT;
+extern const vector<uint8_t> HOW_MANY_RANKS;
 extern const unordered_map<wchar_t, rank_t> WCHAR_TO_RANK;
 extern const unordered_map<wchar_t, suit_t> WCHAR_TO_SUIT;
 extern const unordered_map<wchar_t, combination_t> WCHAR_TO_COMBINATION;
@@ -110,6 +111,8 @@ public:
 	static bool is_combination_nothing(const vector<int>& comb);
 	bool is_best_combination(vector<int> comb);
 	static void remove_suit(vector<int>& comb);
+	static wstring parse_m_command(const wstring& command, vector<int>& combination);
+	static bool less_combination(vector<int> u, vector<int> v);
 };
 
 #endif // COMBINATIONS_H

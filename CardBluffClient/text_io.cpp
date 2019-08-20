@@ -121,8 +121,10 @@ bool console_init(void){
     init_pair(COLOR_INPUT_ECHO, COLOR_CYAN, COLOR_BLACK);
     init_pair(COLOR_INPUT_CURSOR, COLOR_BLACK, COLOR_WHITE);
     init_pair(COLOR_MESSAGE_SERVER, COLOR_YELLOW, COLOR_BLACK);
-    init_pair(COLOR_HEARTS_DIAMONDS, COLOR_RED, COLOR_BLACK);
-    init_pair(COLOR_SPADES_CLUBS, COLOR_GREEN, COLOR_BLACK);
+    init_pair(COLOR_HEARTS, COLOR_RED, COLOR_BLACK);
+    init_pair(COLOR_DIAMONDS, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(COLOR_SPADES, COLOR_GREEN, COLOR_BLACK);
+    init_pair(COLOR_CLUBS, COLOR_BLUE, COLOR_BLACK);
   }
 
   int rows, cols;
@@ -383,27 +385,27 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
                 if(waddnwstr(w, &card.second, 1) == ERR) return ERR;
                 switch(card.first){
                 case HEARTS:
-                  if(wattron(w, COLOR_PAIR(COLOR_HEARTS_DIAMONDS)) == ERR) return ERR;
+                  if(wattron(w, COLOR_PAIR(COLOR_HEARTS)) == ERR) return ERR;
                   if(waddnwstr(w, HEARTS_CHAR, 1) == ERR) return ERR;
-                  if(wattroff(w, COLOR_PAIR(COLOR_HEARTS_DIAMONDS)) == ERR) return ERR;
+                  if(wattroff(w, COLOR_PAIR(COLOR_HEARTS)) == ERR) return ERR;
                   break;
 
                 case DIAMONDS:
-                  if(wattron(w, COLOR_PAIR(COLOR_HEARTS_DIAMONDS)) == ERR) return ERR;
+                  if(wattron(w, COLOR_PAIR(COLOR_DIAMONDS)) == ERR) return ERR;
                   if(waddnwstr(w, DIAMONDS_CHAR, 1) == ERR) return ERR;
-                  if(wattroff(w, COLOR_PAIR(COLOR_HEARTS_DIAMONDS)) == ERR) return ERR;
+                  if(wattroff(w, COLOR_PAIR(COLOR_DIAMONDS)) == ERR) return ERR;
                   break;
 
                 case SPADES:
-                  if(wattron(w, COLOR_PAIR(COLOR_SPADES_CLUBS)) == ERR) return ERR;
+                  if(wattron(w, COLOR_PAIR(COLOR_SPADES)) == ERR) return ERR;
                   if(waddnwstr(w, SPADES_CHAR, 1) == ERR) return ERR;
-                  if(wattroff(w, COLOR_PAIR(COLOR_SPADES_CLUBS)) == ERR) return ERR;
+                  if(wattroff(w, COLOR_PAIR(COLOR_SPADES)) == ERR) return ERR;
                   break;
 
                 case CLUBS:
-                  if(wattron(w, COLOR_PAIR(COLOR_SPADES_CLUBS)) == ERR) return ERR;
+                  if(wattron(w, COLOR_PAIR(COLOR_CLUBS)) == ERR) return ERR;
                   if(waddnwstr(w, CLUBS_CHAR, 1) == ERR) return ERR;
-                  if(wattroff(w, COLOR_PAIR(COLOR_SPADES_CLUBS)) == ERR) return ERR;
+                  if(wattroff(w, COLOR_PAIR(COLOR_CLUBS)) == ERR) return ERR;
                   break;
                 }
                 if(&card != &cards.back()) if(waddwstr(w, L", ") == ERR) return ERR;

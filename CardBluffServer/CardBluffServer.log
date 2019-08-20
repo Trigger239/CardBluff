@@ -3,10 +3,31 @@
 Opponent finding thread started
 Client connected
 Waiting for client
+Send thread created
+New client: Receive thread created
+Client connected
+Waiting for client
+Send thread created
+New client: Receive thread created
+New client: Disconnected (receive thread)
+Send thread for client 0 terminated
+New client: Receive thread terminated
+Client connected
+Waiting for client
 New client: Receive thread created
 Send thread created
+New client: Nickname message received: ''
+New client '': First register password message received: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+New client '': Second register password message received: '57e79e5c82a5a5e865d88df9c3565fd7a5b9d93192069a1eac063e8fa2fa19c4'
+New client '': Second register password OK
 New client: Nickname message received: 'imp'
-New client 'imp': Password message received: '8661dc89c27e7da21ab1d0771624baf10b2118cca70f2f9995f940f9f502938d'
+New client 'imp': Password message received: 'f7d537c2ccd9f204bc37915f652120df4ab75d93cc40dbf21a0e656a2f67a063'
 Pass from database: '110b6446ba73be5e166a2d4923934d46ef863f055c0dca048a00f471a4b43693'
-Waiting pass: '8661dc89c27e7da21ab1d0771624baf10b2118cca70f2f9995f940f9f502938d' (salt '287b2115ca4938e2')
+Waiting pass: 'f7d537c2ccd9f204bc37915f652120df4ab75d93cc40dbf21a0e656a2f67a063' (salt '906432d1465ae8e2')
 New client 'imp': Password OK
+Client 6: Disconnected (receive thread)
+Client 4: Disconnected (receive thread)
+Send thread for client 6 terminated
+Client 6: Receive thread terminated
+Send thread for client 4 terminated
+Client 4: Receive thread terminated
