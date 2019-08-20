@@ -483,6 +483,7 @@ bool Hand::check_combination(const vector<int>& comb)
     {
         case NOTHING: return check_nothing();
         case HIGH_CARD: return check_high_card(comb[1]);
+        case PAIR: return check_high_card(comb[1]);
         case TWO_PAIRS: return check_two_pairs(pair<int, int>(comb[1], comb[2]));
         case SET: return check_three_of_a_kind(comb[1]);
         case STRAIGHT: return check_straight(comb[1]);
