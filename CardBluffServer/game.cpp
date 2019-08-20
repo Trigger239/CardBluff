@@ -209,13 +209,13 @@ uint8_t Game::game_result() const
 // TODO: use everywhere the two following functions
 void Game::push_client_string_to_both(const wstring &str, Client* cl = nullptr)
 {
-    wstring addend = cl ? USER_PREFIX + cl->get_nickname_with_color() + L':' : SERVER_PREFIX;
-    push_string_to_both(addend + L' ' + str);
+    wstring addend = cl ? USER_PREFIX + cl->get_nickname_with_color() + L":" : SERVER_PREFIX;
+    push_string_to_both(addend + L" " + str);
 }
 void Game::push_client_string_to_client(const wstring &str, Client* receiver, Client* sender)
 {
     wstring addend = sender ? USER_PREFIX + sender->get_nickname_with_color() + L":" : SERVER_PREFIX;
-    receiver->push_string((addend + L' ' + str).c_str());
+    receiver->push_string((addend + L" " + str).c_str());
 }
 void Game::make_move(Command cmd){
   assert(cmd.type == MOVE_COMMAND);
@@ -308,7 +308,7 @@ void Game::make_move(Command cmd){
         }
         else
         {
-            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", " + transcript + L'.'); // TODO: ENGLISH
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", " + transcript + L"."); // TODO: ENGLISH
         }
     }
 
