@@ -524,8 +524,9 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
     static const wstring EXCESS_INFORMATION = L"excess information: ";
 
     int number_of_symbol = 0;
+    int command_length = ((int)((command).size()));
 
-    if (((int)((command).size())) <= number_of_symbol)
+    if (command_length <= number_of_symbol)
         return MISSING_COMBINATION;
     auto it_combination = WCHAR_TO_COMBINATION.find(command[number_of_symbol]);
     if (it_combination == WCHAR_TO_COMBINATION.end())
@@ -538,7 +539,7 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
     for (int i = 0; i < number_of_ranks; ++i)
     {
         number_of_symbol = 1 + i;
-        if (((int)((command).size())) <= number_of_symbol)
+        if (command_length <= number_of_symbol)
             return MISSING_RANK;
         auto it_rank = WCHAR_TO_RANK.find(command[number_of_symbol]);
         if (it_rank == WCHAR_TO_RANK.end())
@@ -550,7 +551,7 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
     if (number_of_suits)
     {
         number_of_symbol = 1 + number_of_ranks;
-        if (((int)((command).size())) <= number_of_symbol)
+        if (command_length <= number_of_symbol)
             return MISSING_SUIT;
         auto it_suit = WCHAR_TO_SUIT.find(command[number_of_symbol]);
         if (it_suit == WCHAR_TO_SUIT.end())
@@ -559,7 +560,8 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
         combination.push_back(suit);
     }
 
-    if (((int)((command).size())) > 1 + number_of_ranks + number_of_suits)
+    if (command_length > 1 + number_of_ranks + number_of_suits)
+        return INCORRECT_SUIT + L'\"' + command.substr(1 + number_of_ranks + number_of_suits, command_length - (1 + number_of_ranks + number_of_suits)) + L'\"';
 
     if (combination_type == TWO_PAIRS)
         sort(combination.begin() + 1, combination.begin() + 3);
