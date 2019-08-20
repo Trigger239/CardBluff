@@ -83,7 +83,7 @@ void Game::process(bool* _terminate){
   }
 
   if(!finished){
-    if(chrono::duration_cast<chrono::duration<double>>(now - move_start_time).count() * 1000.0 > MOVE_TIMEOUT){
+    if(get_remaining_move_time(now) * 1000.0 > MOVE_TIMEOUT){
 
       push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L", you haven't done your move in time!", get_currently_moving_player());
       push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L" hasn't done the move in time!", get_currently_not_moving_player());
@@ -240,6 +240,11 @@ void Game::make_move(Command cmd){
       report_round_results(client == first_player ? FIRST_PLAYER_LOST_GAME : SECOND_PLAYER_LOST_GAME);
       finish(client == first_player ? FIRST_PLAYER_LOST_GAME : SECOND_PLAYER_LOST_GAME);
       //LeaveCriticalSection(&make_move_critical_section);
+      return;
+  }
+  if(lcws == L"/tr"){
+      push_client_string_to_client(SERVER_PREFIX + client->get_nickname_with_color() + L", you have " +
+                                   ll_to_wstring(get_remaining_move_time()) + L" second(s) to move.", client);
       return;
   }
 
@@ -541,4 +546,8 @@ Client* Game::get_second_player() const
 
 bool Game::makes_current_move(Client* client){
   return get_currently_moving_player()->get_id() == client->get_id();
+}
+
+double Game::get_remaining_move_time(chrono::high_resolution_clock::time_point now){
+  return chrono::duration_cast<chrono::duration<double>>(now - move_start_time).count();
 }

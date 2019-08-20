@@ -76,14 +76,14 @@ void s_cl(const char *a, int x)
 }
 
 SOCKET create_socket(){
-  win_addwstr(output_win, L"Creating socket... ");
+  output_win_addwstr(L"Creating socket... ");
   SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);       //Create the socket
       if(sock == INVALID_SOCKET )
           s_cl("Invalid Socket", WSAGetLastError());
       else if(sock == SOCKET_ERROR)
           s_cl("Socket Error", WSAGetLastError());
       else
-        win_addwstr(output_win, L"OK\n");
+        output_win_addwstr(L"OK\n");
   return sock;
 }
 
@@ -102,8 +102,8 @@ int main(void){
 
   ifstream config("config.txt");
   if(config.fail()){
-    win_addwstr_colored(output_win, ERROR_PREFIX L" Can't open configuration file.");
-    win_addwstr(output_win, L"Press any key to exit.\n");
+    output_win_addwstr_colored(ERROR_PREFIX L" Can't open configuration file.");
+    output_win_addwstr(L"Press any key to exit.\n");
     flushinp();
     while(getch() == ERR){
       Sleep(10);
@@ -113,8 +113,8 @@ int main(void){
 
   getline(config, host_name);
   if(config.fail()){
-    win_addwstr_colored(output_win, ERROR_PREFIX L" Can't read server address from configuration file!");
-    win_addwstr(output_win, L"Press any key to exit.\n");
+    output_win_addwstr_colored(ERROR_PREFIX L" Can't read server address from configuration file!");
+    output_win_addwstr(L"Press any key to exit.\n");
     flushinp();
     while(getch() == ERR){
       Sleep(10);
@@ -124,8 +124,8 @@ int main(void){
 
   config >> port;
   if(config.fail()){
-    win_addwstr_colored(output_win, ERROR_PREFIX L" Can't read server port from configuration file!");
-    win_addwstr(output_win, L"Press any key to exit.\n");
+    output_win_addwstr_colored(ERROR_PREFIX L" Can't read server port from configuration file!");
+    output_win_addwstr(L"Press any key to exit.\n");
     flushinp();
     while(getch() == ERR){
       Sleep(10);
@@ -135,13 +135,13 @@ int main(void){
 
   config.close();
 
-  win_addwstr(output_win, L"WSA Startup... ");
+  output_win_addwstr(L"WSA Startup... ");
   res = WSAStartup(MAKEWORD(1, 1), &data);      //Start Winsock
 
   if(res != 0)
       s_cl("failed", WSAGetLastError());
 
-  win_addwstr(output_win, L"OK\n");
+  output_win_addwstr(L"OK\n");
 
   signal(SIGINT, s_handle);
   signal(SIGKILL, s_handle);
@@ -178,7 +178,7 @@ int main(void){
           if(state == AUTHORIZED){
             wchar_t* buf = new wchar_t[receive_buffer.size() + 1];
             wcscpy(buf, receive_buffer.c_str());
-            win_addwstr_colored(output_win, buf);
+            output_win_addwstr_colored(buf);
             delete[] buf;
           }
           else{
@@ -206,7 +206,7 @@ int main(void){
             else{
               wchar_t* buf = new wchar_t[receive_buffer.size() + 1];
               wcscpy(buf, receive_buffer.c_str());
-              win_addwstr_colored(output_win, buf);
+              output_win_addwstr_colored(buf);
               delete[] buf;
             }
           }
@@ -221,8 +221,8 @@ int main(void){
     switch(state){
     case CONNECTION_LOST:
       closesocket(socket);
-      win_addwstr_colored(output_win, ERROR_PREFIX L" Connection is lost!");
-      win_addwstr(output_win, L"Press Enter to try to connect again, or press 'Q' to quit.\n");
+      output_win_addwstr_colored(ERROR_PREFIX L" Connection is lost!");
+      output_win_addwstr(L"Press Enter to try to connect again, or press 'Q' to quit.\n");
       state = WAIT_RECONNECT_OR_QUIT;
       break;
 
@@ -256,56 +256,56 @@ int main(void){
 
       wchar_t buf[300];
       swprintf(buf, L"Server address is '%hs', port %u.\n", host_name.c_str(), (unsigned int) port);
-      win_addwstr(output_win, buf);
+      output_win_addwstr(buf);
 
-      win_addwstr(output_win, L"Retrieving server IP...\n");
+      output_win_addwstr(L"Retrieving server IP...\n");
       host = gethostbyname(host_name.c_str());
       if(host != NULL){
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = ((in_addr*)host->h_addr_list[0])->s_addr;
         addr.sin_port = htons(port);
 
-        win_addwstr(output_win, (L"Server IP is " + converter.from_bytes(inet_ntoa(addr.sin_addr)) + L"\n").c_str());
+        output_win_addwstr((L"Server IP is " + converter.from_bytes(inet_ntoa(addr.sin_addr)) + L"\n").c_str());
 
-        win_addwstr(output_win, L"Connecting to the server...\n");
+        output_win_addwstr(L"Connecting to the server...\n");
         res = connect(socket, (sockaddr*) &addr, sizeof(addr)); //Connect to the server
         if(res == 0){
-          win_addwstr(output_win, L"Connection established!\n");
+          output_win_addwstr(L"Connection established!\n");
 
           unsigned long non_blocking = 1;
           if (ioctlsocket(socket, FIONBIO, &non_blocking) != SOCKET_ERROR){
-            win_addwstr(output_win, L"Connection parameters were set successfully.\n");
+            output_win_addwstr(L"Connection parameters were set successfully.\n");
 
-            win_addwstr(output_win, L"Please enter nickname.\n");
+            output_win_addwstr(L"Please enter nickname.\n");
 
             connected = true;
             state = NICKNAME_ENTER;
           }
           else{
-            win_addwstr_colored(output_win, ERROR_PREFIX L" Failed to put socket into non-blocking mode!");
+            output_win_addwstr_colored(ERROR_PREFIX L" Failed to put socket into non-blocking mode!");
             closesocket(socket);
           }
         }
         else{
-          win_addwstr_colored(output_win, ERROR_PREFIX L" Server unavailable!");
+          output_win_addwstr_colored(ERROR_PREFIX L" Server unavailable!");
           closesocket(socket);
         }
       }
       else{
         int res = WSAGetLastError();
         if(res == WSAHOST_NOT_FOUND) {
-          win_addwstr_colored(output_win, ERROR_PREFIX L" Host not found!");
+          output_win_addwstr_colored(ERROR_PREFIX L" Host not found!");
         }
         else if(res == WSANO_DATA) {
-          win_addwstr_colored(output_win, ERROR_PREFIX L" No data record found!");
+          output_win_addwstr_colored(ERROR_PREFIX L" No data record found!");
         }
         else{
-          win_addwstr_colored(output_win, ERROR_PREFIX L" Failed!");
+          output_win_addwstr_colored(ERROR_PREFIX L" Failed!");
         }
       }
 
       if(!connected){
-        win_addwstr(output_win, L"Press Enter to try to connect again, or press 'Q' to quit.\n");
+        output_win_addwstr(L"Press Enter to try to connect again, or press 'Q' to quit.\n");
 
         state = WAIT_RECONNECT_OR_QUIT;
       }
@@ -313,7 +313,7 @@ int main(void){
 
     case NICKNAME_ENTER:
       if(!win_get_wstr(input_win, output_win, input_buffer, false, &input_ready)){
-        win_addwstr_colored(output_win, ERROR_PREFIX L" Can't read nickname from console.\n");
+        output_win_addwstr_colored(ERROR_PREFIX L" Can't read nickname from console.\n");
       }
       if(!input_ready)
         break;
@@ -321,15 +321,15 @@ int main(void){
       if(input_buffer.size() < NICKNAME_SIZE_MIN){
         wchar_t buf[100];
         swprintf(buf, ERROR_PREFIX L" Nickname should contain at least %u characters!", (unsigned int) NICKNAME_SIZE_MIN);
-        win_addwstr_colored(output_win, buf);
-        win_addwstr(output_win, L"Please try again.\n");
+        output_win_addwstr_colored(buf);
+        output_win_addwstr(L"Please try again.\n");
         break;
       }
       if(wcscspn(input_buffer.c_str(), NICKNAME_CHARS_NOT_ALLOWED) < input_buffer.size()){
         wchar_t buf[100];
         swprintf(buf, ERROR_PREFIX L" Nickname shouldn't contain these characters: %ls", (unsigned int) NICKNAME_CHARS_NOT_ALLOWED);
-        win_addwstr_colored(output_win, buf);
-        win_addwstr(output_win, L"Please try again.\n");
+        output_win_addwstr_colored(buf);
+        output_win_addwstr(L"Please try again.\n");
         break;
       }
       input_buffer = L"nickname:" + input_buffer;
@@ -340,7 +340,7 @@ int main(void){
 
     case PASSWORD_REGISTER_FIRST_ENTER:
       if(!win_get_wstr(input_win, output_win, pass, true, &input_ready)){
-        win_addwstr_colored(output_win, ERROR_PREFIX L" Can't read password from console.\n");
+        output_win_addwstr_colored(ERROR_PREFIX L" Can't read password from console.\n");
       }
       if(!input_ready)
         break;
@@ -348,8 +348,8 @@ int main(void){
       if(pass.size() < PASSWORD_SIZE_MIN){
         wchar_t buf[100];
         swprintf(buf, ERROR_PREFIX L" Password should contain at least %u characters!", (unsigned int) PASSWORD_SIZE_MIN);
-        win_addwstr_colored(output_win, buf);
-        win_addwstr(output_win, L"Please try again.\n");
+        output_win_addwstr_colored(buf);
+        output_win_addwstr(L"Please try again.\n");
         break;
       }
       wcscpy(send_buffer, L"password_first:");
@@ -360,7 +360,7 @@ int main(void){
 
     case PASSWORD_REGISTER_SECOND_ENTER:
       if(!win_get_wstr(input_win, output_win, pass, true, &input_ready)){
-        win_addwstr_colored(output_win, ERROR_PREFIX L" Can't read password from console.\n");
+        output_win_addwstr_colored(ERROR_PREFIX L" Can't read password from console.\n");
       }
       if(!input_ready)
         break;
@@ -368,8 +368,8 @@ int main(void){
       if(pass.size() < PASSWORD_SIZE_MIN){
         wchar_t buf[100];
         swprintf(buf, ERROR_PREFIX L" Password should contain at least %u characters!", (unsigned int) PASSWORD_SIZE_MIN);
-        win_addwstr_colored(output_win, buf);
-        win_addwstr(output_win, L"Please try again.\n");
+        output_win_addwstr_colored(buf);
+        output_win_addwstr(L"Please try again.\n");
         break;
       }
       swprintf(salt_str, L"%08x%08x",
@@ -389,7 +389,7 @@ int main(void){
 
     case PASSWORD_ENTER:
       if(!win_get_wstr(input_win, output_win, pass, true, &input_ready)){
-        win_addwstr_colored(output_win, ERROR_PREFIX L" Can't read password from console.\n");
+        output_win_addwstr_colored(ERROR_PREFIX L" Can't read password from console.\n");
       }
       if(!input_ready)
         break;
@@ -397,8 +397,8 @@ int main(void){
       if(pass.size() < PASSWORD_SIZE_MIN){
         wchar_t buf[100];
         swprintf(buf, ERROR_PREFIX L" Password should contain at least %u characters!", (unsigned int) PASSWORD_SIZE_MIN);
-        win_addwstr_colored(output_win, buf);
-        win_addwstr(output_win, L"Please try again.\n");
+        output_win_addwstr_colored(buf);
+        output_win_addwstr(L"Please try again.\n");
         break;
       }
       swprintf(salt_str, L"%08x%08x",
@@ -418,7 +418,7 @@ int main(void){
 
     case AUTHORIZED:
       if(!win_get_wstr(input_win, output_win, input_buffer, false, &input_ready)){
-        win_addwstr_colored(output_win, ERROR_PREFIX L" Can't read from console.\n");
+        output_win_addwstr_colored(ERROR_PREFIX L" Can't read from console.\n");
       }
       if(!input_ready)
         break;

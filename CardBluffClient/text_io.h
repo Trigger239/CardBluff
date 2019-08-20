@@ -38,6 +38,9 @@ typedef enum
 #define CLUBS_CHAR L"\x2663"
 
 #define INPUT_WINDOW_ROWS 3
+#define OUTPUT_WINDOW_ROWS 10000
+
+//#define USE_MUTEX
 
 extern WINDOW* input_win;
 extern WINDOW* output_win;
@@ -45,13 +48,13 @@ extern WINDOW* output_win;
 bool console_init(void);
 
 int use_win(WINDOW *win, std::function<int(WINDOW*)> cb_func);
-int win_addwstr(WINDOW* win, const wchar_t* str);
+int output_win_addwstr(const wchar_t* str);
 int win_wprintw(WINDOW* win, const char* format, ...);
 bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
                   std::wstring &str, bool hide_input,
                   bool* input_ready);
 
-int win_addwstr_colored(WINDOW* win, wchar_t* str);
+int output_win_addwstr_colored(wchar_t* str);
 
 #endif // TEXT_IO_H_INCLUDED
 
