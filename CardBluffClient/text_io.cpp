@@ -466,7 +466,7 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
   }
   else if(wcsncmp(str, USER_PREFIX, wcslen(USER_PREFIX)) == 0){
     return use_win(win, [&](WINDOW* w){
-              if(waddwstr(w, str + wcslen(USER_PREFIX)) == ERR) return ERR;
+              if(win_print_with_highlight(w, str + wcslen(USER_PREFIX)) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
               return wrefresh(w);
             });
