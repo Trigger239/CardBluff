@@ -200,8 +200,10 @@ int main(void){
 
     case WAIT_RECONNECT_OR_QUIT:
       c = getch();
-      if(c == (wchar_t) ERR)
+      if(c == (wchar_t) ERR){
+        Sleep(10);
         break;
+      }
 
       if(c & KEY_CODE_YES){
         if(c == KEY_ENTER || c == PADENTER){

@@ -7,20 +7,28 @@
 
 #define BUFFER_SIZE 1000
 
+
+Command::Command(Client* sender,
+          wstring cmd,
+          CurrentMove move,
+          command_type_t type = MOVE_COMMAND)
+  : sender(sender)
+  , cmd(cmd)
+  , move(move)
+  , type(type)
+  , t(chrono::high_resolution_clock::now()){};
+
 Game::Game(Client* first_player,
            Client* second_player,
            CurrentMove current_move)
-  : first_player(first_player)
+  : finished(false)
+  , first_player(first_player)
   , second_player(second_player)
   , current_move(current_move)
   , gnr(chrono::high_resolution_clock::now().time_since_epoch().count())
   {
-    terminate_event = CreateEvent(NULL, TRUE, FALSE, NULL);
-    move_event = CreateEvent(NULL, TRUE, FALSE, NULL);
     thread_handle_ready_event = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-    InitializeCriticalSection(&finish_critical_section);
-    InitializeCriticalSection(&make_move_critical_section);
+    command_queue_mutex = CreateMutex(NULL, FALSE, NULL);
 
     first_player_card_number = START_CARD_NUMBER;
     second_player_card_number = START_CARD_NUMBER;
@@ -30,79 +38,87 @@ Game::Game(Client* first_player,
   };
 
 Game::~Game(){
-  CloseHandle(terminate_event);
-  CloseHandle(move_event);
   CloseHandle(thread_handle_ready_event);
-  DeleteCriticalSection(&finish_critical_section);
-  DeleteCriticalSection(&make_move_critical_section);
+  CloseHandle(command_queue_mutex);
+}
+
+void Game::push_command(Client* client, const wstring& command){
+  WaitForSingleObject(command_queue_mutex, INFINITE);
+  command_queue.emplace(client, command, current_move);
+  ReleaseMutex(command_queue_mutex);
+}
+
+void Game::push_disconnect(Client* client){
+  WaitForSingleObject(command_queue_mutex, INFINITE);
+  command_queue.emplace(client, L"", current_move, DISCONNECT);
+  ReleaseMutex(command_queue_mutex);
 }
 
 void Game::process(bool* _terminate){
   *_terminate = false;
-  HANDLE events[2] = {move_event, terminate_event};
 
-  switch(WaitForMultipleObjects(2, events, FALSE, MOVE_TIMEOUT)){
-  case WAIT_OBJECT_0 + 0: //move was successfully made
-    ResetEvent(move_event);
-    break;
+  WaitForSingleObject(command_queue_mutex, INFINITE);
+  chrono::high_resolution_clock::time_point now = chrono::high_resolution_clock::now();
 
-  case WAIT_TIMEOUT: //move timeout ends
-    get_currently_moving_player()->
-      push_string(nullptr, SERVER_PREFIX L" You haven't done your move in time.");
+  if(!command_queue.empty()){
+    Command cmd = command_queue.front();
+    command_queue.pop();
+    ReleaseMutex(command_queue_mutex);
 
-    //TODO: convert this pseudocode to normal code (see also make_move())
-//    compute_new_number_of_cards(get_currently_moving_player(), _terminate);
-//    if(!last_round){
-//      send_round_result_messages(get_currently_moving_player());
-//      start_round();
-//    }
-//    else{
-//      finish(get_currently_moving_player(), _terminate);
-//      //if(*_terminate)
-//      //  return;
-//
-//      *_terminate = true;
-//      return;
-//    }
-    //TODO: And delete next 3 lines.
+    switch(cmd.type){
+      case MOVE_COMMAND:
+        make_move(cmd);
+        break;
 
-   // finish(get_currently_moving_player(), _terminate);
-    //*_terminate = true;
-    //return;
+      case DISCONNECT:
+        report_round_results(cmd.sender == first_player ? FIRST_PLAYER_LOST_GAME : SECOND_PLAYER_LOST_GAME);
+        finish(cmd.sender == first_player ? FIRST_PLAYER_LOST_GAME : SECOND_PLAYER_LOST_GAME);
+        *_terminate = true;
+        break;
+    }
+  }
+  else{
+    ReleaseMutex(command_queue_mutex);
+    Sleep(10);
+  }
 
+  if(!finished){
+    if(chrono::duration_cast<chrono::duration<double>>(now - move_start_time).count() * 1000.0 > MOVE_TIMEOUT){
 
-    break;
+      push_client_string_to_client(get_currently_moving_player()->get_nickname() + L", you haven't done your move in time!", get_currently_moving_player());
+      push_client_string_to_client(get_currently_moving_player()->get_nickname() + L" haven't done his move in time!", get_currently_not_moving_player());
 
-  case WAIT_OBJECT_0 + 1: //terminate
+      if(first_player_card_number == START_CARD_NUMBER &&
+         second_player_card_number == START_CARD_NUMBER){
+        report_round_results(TIE_IN_GAME);
+        finish(TIE_IN_GAME);
+      }
+      else{
+        player_loses_round(current_move);
+      }
+    }
+  }
+  else{
     *_terminate = true;
-    return;
-    break;
-
-  default:
-
-    break;
   }
 }
 
-void Game::push_string_to_both(bool* _terminate, const wstring &str){
-  first_player->push_string(str, _terminate);
-  second_player->push_string(str, _terminate);
+void Game::push_string_to_both(const wstring &str){
+  first_player->push_string(str);
+  second_player->push_string(str);
 }
 
-
-void Game::start_round(bool* _terminate){
+void Game::start_round(){
   //TODO: Start new round (generate cards and initialize other game state vars).
   current_combination.clear();
   current_combination.push_back(NOTHING);
   alternate_first_move();
   generate_cards();
 
-  send_card_messages_to_owners(_terminate);
-  if(_terminate != nullptr && *_terminate)
-    return;
-  send_next_move_prompts(_terminate);
-  if(_terminate != nullptr && *_terminate)
-    return;
+  move_start_time = chrono::high_resolution_clock::now();
+
+  send_card_messages_to_owners();
+  send_next_move_prompts();
 }
 
 vector<CARD_TYPE> Game::generate_shuffled_array_of_cards()
@@ -129,13 +145,6 @@ void Game::generate_cards()
     union_of_cards = Hand(my_cards);
 }
 
-bool Game::is_valid_command(const std::wstring& command){
-    // TODO: do it
-  if(command == L"/concede")
-    return true;
-  return true;
-}
-
 std::wstring remove_spaces(const std::wstring& str)
 {
     std::wstring ans;
@@ -144,7 +153,7 @@ std::wstring remove_spaces(const std::wstring& str)
             ans.push_back(*it);
     return ans;
 }
-void Game::player_loses_round(bool* _terminate, const CurrentMove& cur)
+void Game::player_loses_round(const CurrentMove& cur)
 {
     ++card_number[cur];
     RoundResult res;
@@ -171,18 +180,18 @@ void Game::player_loses_round(bool* _terminate, const CurrentMove& cur)
             break;
         }
     }
-    report_round_results(_terminate, res);
+    report_round_results(res);
     if (FinishedGame(res))
-        finish(res, _terminate);
+        finish(res);
 }
-void Game::tie_in_round(bool* _terminate)
+void Game::tie_in_round()
 {
-    report_round_results(_terminate, TIE_IN_ROUND);
+    report_round_results(TIE_IN_ROUND);
 }
-void Game::report_round_results(bool* _terminate, const RoundResult& res)
+void Game::report_round_results(const RoundResult& res)
 {
-    send_card_messages_to_both_players(_terminate);
-    send_card_numbers_to_both_players(_terminate, res);
+    send_card_messages_to_both_players();
+    send_card_numbers_to_both_players(res);
 }
 // lost player, 2 for a tie, 3 for a continuation
 uint8_t Game::game_result() const
@@ -204,92 +213,89 @@ uint8_t Game::game_result() const
         return SECOND_PLAYER_MOVE;
 }
 // TODO: use everywhere the two following functions
-void Game::push_client_string_to_both(bool* _terminate, const wstring &str, Client* cl = nullptr)
+void Game::push_client_string_to_both(const wstring &str, Client* cl = nullptr)
 {
     wstring addend = cl ? USER_PREFIX + cl->get_nickname() + L":" : SERVER_PREFIX;
-    push_string_to_both(_terminate, addend + L": " + str);
+    push_string_to_both(addend + L": " + str);
 }
-void push_client_string_to_client(bool* _terminate, const wstring &str, Client* receiver, Client* sender = nullptr)
+void Game::push_client_string_to_client(const wstring &str, Client* receiver, Client* sender)
 {
     wstring addend = sender ? USER_PREFIX + sender->get_nickname() + L":" : SERVER_PREFIX;
-    receiver->push_string(_terminate, (addend + L" " + str).c_str());
+    receiver->push_string((addend + L" " + str).c_str());
 }
 wstring parse_m_command(const wstring& command, vector<int>& combination)
 {
 
 }
-void Game::make_move(Client* client, const std::wstring& command, bool* _terminate){
-  *_terminate = false;
+void Game::make_move(Command cmd){
+  assert(cmd.type == MOVE_COMMAND);
 
-  while(!TryEnterCriticalSection(&make_move_critical_section)){
-    if(WaitForSingleObject(terminate_event, 10) == WAIT_OBJECT_0){
-      *_terminate = true;
-      return;
-    }
-  }
-  if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-      *_terminate = true;
-      return;
-  }
+  move_start_time = cmd.t;
 
-  if(!is_valid_command(command)){
-    client->push_string(_terminate, SERVER_PREFIX L" Wrong command!");
-    LeaveCriticalSection(&make_move_critical_section);
-    return;
-  }
-
-  if(command == L"/concede"){
-      report_round_results(_terminate, client == first_player ? FIRST_PLAYER_LOST_GAME : SECOND_PLAYER_LOST_GAME);
-      finish(client == first_player ? FIRST_PLAYER_LOST_GAME : SECOND_PLAYER_LOST_GAME, _terminate);
-      LeaveCriticalSection(&make_move_critical_section);
-      return;
-  }
-
-  std::wstring cws = remove_spaces(command); // command_without_spaces
+  wstring command = cmd.cmd;
+  Client* client = cmd.sender;
+  std::wstring cws = remove_spaces(cmd.cmd); // command_without_spaces
   std::wstring lcws;                         // lowered_command_without_spaces
   std::transform(cws.begin(), cws.end(), back_inserter(lcws), ::towlower);
 
-  if(makes_current_move(client)) {
+  if(lcws == L"/concede"){
+      //Sending move command to currently not moving player
+      push_client_string_to_client(lcws, client == first_player ? second_player : first_player, client);
+
+      push_client_string_to_client(SERVER_PREFIX L"You conceded!", client);
+      push_client_string_to_client(SERVER_PREFIX + client->get_nickname() + L" conceded!",
+                                   client == first_player ? second_player : first_player);
+
+      report_round_results(client == first_player ? FIRST_PLAYER_LOST_GAME : SECOND_PLAYER_LOST_GAME);
+      finish(client == first_player ? FIRST_PLAYER_LOST_GAME : SECOND_PLAYER_LOST_GAME);
+      //LeaveCriticalSection(&make_move_critical_section);
+      return;
+  }
+
+  if(makes_current_move(client)){
+    //Sending move command to currently not moving player
+    push_client_string_to_client(lcws, get_currently_not_moving_player(), client);
+
     if (lcws == L"/r")
     {
         if (Hand::is_combination_nothing(current_combination))
-            push_client_string_to_client(_terminate, client->get_nickname() + L", запрещено вскрываться на первом ходу.", client); // TODO: ENGLISH
+            push_client_string_to_client(client->get_nickname() + L", запрещено вскрываться на первом ходу.", client); // TODO: ENGLISH
         else if (union_of_cards.check_combination(current_combination))
         {
-            push_client_string_to_client(_terminate, cws, client, get_currently_not_moving_player());
-            push_client_string_to_both(_terminate, client->get_nickname() + L", здесь есть эта комбинация."); // TODO: ENGLISH
-            player_loses_round(_terminate, current_move);
+            push_client_string_to_client(cws, client, get_currently_not_moving_player());
+            push_client_string_to_both(client->get_nickname() + L", здесь есть эта комбинация."); // TODO: ENGLISH
+            player_loses_round(current_move);
         }
         else
         {
-            push_client_string_to_client(_terminate, cws, client, get_currently_not_moving_player());
-            push_client_string_to_both(_terminate, client->get_nickname() + L", здесь нет этой комбинации."); // TODO: ENGLISH
-            player_loses_round(_terminate, negation(current_move));
+            push_client_string_to_client(cws, client, get_currently_not_moving_player());
+            push_client_string_to_both(client->get_nickname() + L", здесь нет этой комбинации."); // TODO: ENGLISH
+            player_loses_round(negation(current_move));
         }
     }
     else if (lcws == L"/b")
     {
-        push_client_string_to_client(_terminate, cws, client, get_currently_not_moving_player());
+        push_client_string_to_client(cws, client, get_currently_not_moving_player());
         if (Hand::is_combination_nothing(current_combination))
-            push_client_string_to_client(_terminate, client->get_nickname() + L", запрещено блокировать на первом ходу.", client); // TODO: ENGLISH
+            push_client_string_to_client(client->get_nickname() + L", запрещено блокировать на первом ходу.", client); // TODO: ENGLISH
         else if (union_of_cards.is_best_combination(current_combination))
         {
-            push_client_string_to_client(_terminate, cws, client, get_currently_not_moving_player());
-            push_string_to_both(_terminate, SERVER_PREFIX L" " + client->get_nickname() + L", это лучшая комбинация."); // TODO: ENGLISH
-            tie_in_round(_terminate);
+            push_client_string_to_client(cws, client, get_currently_not_moving_player());
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname() + L", это лучшая комбинация."); // TODO: ENGLISH
+            tie_in_round();
         }
         else if (union_of_cards.check_combination(current_combination))
         {
-            push_client_string_to_client(_terminate, cws, client, get_currently_not_moving_player());
-            push_string_to_both(_terminate, SERVER_PREFIX L" " + client->get_nickname() + L", этой комбинации здесь нет."); // TODO: ENGLISH
-            player_loses_round(_terminate, current_move);
+            push_client_string_to_client(cws, client, get_currently_not_moving_player());
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname() + L", этой комбинации здесь нет."); // TODO: ENGLISH
+            player_loses_round(current_move);
         }
         else
         {
-            push_client_string_to_client(_terminate, cws, client, get_currently_not_moving_player());
-            push_string_to_both(_terminate, SERVER_PREFIX L" " + client->get_nickname() + L", это не лучшая комбинация."); // TODO: ENGLISH
+            push_client_string_to_client(cws, client, get_currently_not_moving_player());
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname() + L", это не лучшая комбинация."); // TODO: ENGLISH
                                                                                                                     // TODO: Write the best combination
-            player_loses_round(_terminate, current_move);
+            player_loses_round(current_move);
         }
     }
     else if (wcsncmp(lcws.c_str(), L"/m", 2) == 0)
@@ -305,158 +311,42 @@ void Game::make_move(Client* client, const std::wstring& command, bool* _termina
 
         }
     }
-    //TODO: Parse and process move command
-    //TODO: convert this pseudocode to normal code (see also process())
-//    if(round_ends){
-//      compute_new_number_of_cards(get_currently_moving_player(), _terminate);
-//      if(!last_round){
-//        send_round_result_messages(get_currently_moving_player());
-//        start_round();
-//      }
-//      else{
-//        finish(get_currently_moving_player());
-//        LeaveCriticalSection(&make_move_critical_section);
-//        return;
-//      }
-//    }
-
-    //Sending move command to currently not moving player
-    get_currently_not_moving_player()->
-      push_string(_terminate, L"%s: %s",
-                  get_currently_moving_player()->get_nickname().c_str(),
-                  command.c_str());
-    if(*_terminate){
-      LeaveCriticalSection(&make_move_critical_section);
-      return;
-    }
-
-
 
     //Prepare the next move
     alternate_current_move();
-    send_next_move_prompts(_terminate);
-    if(*_terminate){
-      LeaveCriticalSection(&make_move_critical_section);
-      return;
-    }
-
-    SetEvent(move_event);
+    send_next_move_prompts();
   }
   else{
     get_currently_not_moving_player()->
-      push_string(_terminate, SERVER_PREFIX L" It's not your move now!");
-    if(*_terminate){
-      LeaveCriticalSection(&make_move_critical_section);
-      return;
-    }
+      push_string(SERVER_PREFIX L" It's not your move now!");
     get_currently_moving_player()->
-      push_string(_terminate, SERVER_PREFIX L" Your opponent "
-                  L"tried to make a move: '%s'.", command.c_str());
-    if(*_terminate){
-      LeaveCriticalSection(&make_move_critical_section);
-      return;
-    }
+      push_string(SERVER_PREFIX L" Your opponent "
+                  L"tried to make a move: '" + command + L"'.");
   }
-  LeaveCriticalSection(&make_move_critical_section);
-}/*
-void Game::finish_round(Client* client, bool* _terminate)
-{
-  log("Finishing the round...\n");
-  if(_terminate != nullptr)
-    *_terminate = false;
-  while(!TryEnterCriticalSection(&finish_critical_section)){
-    if(WaitForSingleObject(terminate_event, 10)){
-      if(_terminate != nullptr)
-        *_terminate = true;
-      return;
-    }
-  }
+}
 
-  //This code protects from finishing from two different thread
-  //(is both clients are disconnected or one of them loses etc.).
-  if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-    LeaveCriticalSection(&finish_critical_section);
-    return;
-  }
-  //TODO: Process the LOSE of the client (send messages, update ratings).
-  Client* loser = client;
-  Client* winner = (client == first_player) ? second_player : first_player;
-
-  wchar_t str[BUFFER_SIZE];
-
-  log("Sending number of cards...\n");
-  swprintf(str, L"SERVER: Number of cards:\nSERVER: %s: %s\nSERVER: %s: %s",
-          first_player->get_nickname().c_str(), (first_player == loser) ? L"Lost" : ll_to_wstring(first_player_card_number).c_str(),
-          second_player->get_nickname().c_str(), (second_player == loser) ? L"Lost" : ll_to_wstring(second_player_card_number).c_str());
-  push_string_to_both(_terminate, wstring(str));
-  log("Numbers of cards sent.\n");
-
-  first_player->set_in_game(false);
-  second_player->set_in_game(false);
-  first_player->set_state(WAIT_ENTER_GAME);
-  second_player->set_state(WAIT_ENTER_GAME);
-
-  SetEvent(terminate_event);
-
-  LeaveCriticalSection(&finish_critical_section);
-}*/
-void Game::finish(const RoundResult& res, bool* _terminate){
+void Game::finish(const RoundResult& res){
   log("Finishing the game...\n");
-  if(_terminate != nullptr)
-    *_terminate = false;
-  while(!TryEnterCriticalSection(&finish_critical_section)){
-    if(WaitForSingleObject(terminate_event, 10)){
-      if(_terminate != nullptr)
-        *_terminate = true;
-      return;
-    }
-  }
-
-  //This code protects from finishing from two different thread
-  //(is both clients are disconnected or one of them loses etc.).
-  if(WaitForSingleObject(terminate_event, 0) == WAIT_OBJECT_0){
-    LeaveCriticalSection(&finish_critical_section);
-    return;
-  }
   //TODO: Process the LOSE of the client (send messages, update ratings).
-/*
-  Client* loser = client;
-  Client* winner = (client == first_player) ? second_player : first_player;
 
-  wchar_t str[BUFFER_SIZE];
-
-  log("Sending number of cards...\n");
-  swprintf(str, L"SERVER: Number of cards:\nSERVER: %s: %s\nSERVER: %s: %s",
-          first_player->get_nickname().c_str(), (first_player == loser) ? L"Lost" : ll_to_wstring(first_player_card_number).c_str(),
-          second_player->get_nickname().c_str(), (second_player == loser) ? L"Lost" : ll_to_wstring(second_player_card_number).c_str());
-  push_string_to_both(_terminate, wstring(str));
-  log("Numbers of cards sent.\n");
-*/
   first_player->set_in_game(false);
   second_player->set_in_game(false);
   first_player->set_state(WAIT_ENTER_GAME);
   second_player->set_state(WAIT_ENTER_GAME);
 
-  SetEvent(terminate_event);
 
-  LeaveCriticalSection(&finish_critical_section);
+  finished = true;
 };
 
-void Game::send_next_move_prompts(bool* _terminate){
-    if(_terminate != nullptr)
-      *_terminate = false;
-    get_currently_moving_player()->
-      push_string(_terminate, SERVER_PREFIX L" %s, you have %u seconds to move.",
+void Game::send_next_move_prompts(){
+  wchar_t buf[100];
+  swprintf(buf, SERVER_PREFIX L" %ls, you have %u seconds to move.",
                   get_currently_moving_player()->get_nickname().c_str(),
                   (unsigned int) (MOVE_TIMEOUT / 1000));
-    if(_terminate != nullptr && *_terminate){
-      return;
-    }
+    get_currently_moving_player()->
+      push_string(buf);
     get_currently_not_moving_player()->
-      push_string(_terminate, SERVER_PREFIX L" Waiting your opponent to move...");
-    if(_terminate != nullptr && *_terminate){
-      return;
-    }
+      push_string(SERVER_PREFIX L" Waiting your opponent to move...");
 }
 
 wstring cards_to_string(vector<CARD_TYPE> &cards){
@@ -492,52 +382,23 @@ wstring cards_to_string(vector<CARD_TYPE> &cards){
 
   return wstring(str);
 }
-void Game::send_card_messages_to_one_player(bool* _terminate, Client* client){
-  push_client_string_to_client(_terminate, L"Cards:", client);
-    if(_terminate != nullptr && *_terminate){
-      return;
-    }
-  client->push_string(cards_to_string(first_player_cards) + first_player->get_nickname() + L": ", _terminate);
-    if(_terminate != nullptr && *_terminate){
-      return;
-    }
-  client->push_string(cards_to_string(second_player_cards) + second_player->get_nickname() + L": ", _terminate);
-    if(_terminate != nullptr && *_terminate){
-      return;
-    }
+void Game::send_card_messages_to_one_player(Client* client){
+  push_client_string_to_client(L"Cards:", client);
+  client->push_string(cards_to_string(first_player_cards) + first_player->get_nickname() + L": ");
+  client->push_string(cards_to_string(second_player_cards) + second_player->get_nickname() + L": ");
 }
-void Game::send_card_messages_to_both_players(bool* _terminate){
+void Game::send_card_messages_to_both_players(){
   log("Sending card messages to both players\n");
-  if(_terminate != nullptr)
-    *_terminate = false;
-  send_card_messages_to_one_player(_terminate, first_player);
-  bool finally_terminate = (_terminate != nullptr && *_terminate);
-
-  if(_terminate != nullptr)
-    *_terminate = false;
-
-  send_card_messages_to_one_player(_terminate, second_player);
-
-  if(_terminate != nullptr && (*_terminate == false)){
-    *_terminate = finally_terminate;
-  }
+  send_card_messages_to_one_player(first_player);
+  send_card_messages_to_one_player(second_player);
 }
-void Game::send_card_numbers_to_one_player(bool* _terminate, Client* client, const wstring& zero_line, const wstring& first_line, const wstring& second_line)
+void Game::send_card_numbers_to_one_player(Client* client, const wstring& zero_line, const wstring& first_line, const wstring& second_line)
 {
-    push_client_string_to_client(_terminate, zero_line, client);
-    if(_terminate != nullptr && *_terminate){
-      return;
-    }
-    push_client_string_to_client(_terminate, first_line, client);
-    if(_terminate != nullptr && *_terminate){
-      return;
-    }
-    push_client_string_to_client(_terminate, second_line, client);
-    if(_terminate != nullptr && *_terminate){
-      return;
-    }
+    push_client_string_to_client(zero_line, client);
+    push_client_string_to_client(first_line, client);
+    push_client_string_to_client(second_line, client);
 }
-void Game::send_card_numbers_to_both_players(bool* _terminate, const RoundResult& res)
+void Game::send_card_numbers_to_both_players(const RoundResult& res)
 {
     log("Sending card numbers to both players\n");
     std::wstring zero_line, first_line, second_line;
@@ -567,24 +428,12 @@ void Game::send_card_numbers_to_both_players(bool* _terminate, const RoundResult
             second_line += L" :facepalm:";
     }
 
-    send_card_numbers_to_one_player(_terminate, first_player, zero_line, first_line, second_line);
-
-    bool finally_terminate = (_terminate != nullptr && *_terminate);
-
-    if(_terminate != nullptr)
-        *_terminate = false;
-
-    send_card_numbers_to_one_player(_terminate, second_player, zero_line, first_line, second_line);
-
-    if(_terminate != nullptr && (*_terminate == false)){
-        *_terminate = finally_terminate;
-    }
+    send_card_numbers_to_one_player(first_player, zero_line, first_line, second_line);
+    send_card_numbers_to_one_player(second_player, zero_line, first_line, second_line);
 }
 
-void Game::send_card_messages_to_owners(bool* _terminate){
+void Game::send_card_messages_to_owners(){
   log("Sending card messages\n");
-  if(_terminate != nullptr)
-    *_terminate = false;
   //TODO: Send real cards according to current game state.
   //      Card message format:
   //      cards:<number_of_cards>:<suit>,<value>[:<suit>,<value>]
@@ -594,27 +443,13 @@ void Game::send_card_messages_to_owners(bool* _terminate){
   //            <suit> - integer from 0 to 3,
   //            <value> - single char '2' - '9', '0', 'J', 'Q', 'K' or 'A'
 
-  first_player->push_string(cards_to_string(first_player_cards), _terminate);
-  bool finally_terminate = (_terminate != nullptr && *_terminate);
-
-  if(_terminate != nullptr)
-    *_terminate = false;
-
-  second_player->push_string(cards_to_string(second_player_cards), _terminate);
-
-  if(_terminate != nullptr && (*_terminate == false)){
-    *_terminate = finally_terminate;
-  }
+  first_player->push_string(cards_to_string(first_player_cards));
+  second_player->push_string(cards_to_string(second_player_cards));
 }
 
 //client is a loser of a round
-void Game::send_round_result_messages(Client* client, bool* _terminate){
-  if(_terminate != nullptr)
-    *_terminate = false;
-
+void Game::send_round_result_messages(Client* client){
   wchar_t message_first[BUFFER_SIZE], message_second[BUFFER_SIZE];
-
-  //TODO: Send real number of cards
 
   if(client->get_id() == first_player->get_id()){
     //First player lost round
@@ -637,26 +472,8 @@ void Game::send_round_result_messages(Client* client, bool* _terminate){
   else
     return;
 
-  first_player->
-    push_string(_terminate, message_first);
-  if(_terminate != nullptr && *_terminate){
-    return;
-  }
-  first_player->
-    push_string(_terminate, message_second);
-  if(_terminate != nullptr && *_terminate){
-    return;
-  }
-  second_player->
-    push_string(_terminate, message_first);
-  if(_terminate != nullptr && *_terminate){
-    return;
-  }
-  second_player->
-    push_string(_terminate, message_second);
-  if(_terminate != nullptr && *_terminate){
-    return;
-  }
+  push_client_string_to_both(wstring(message_first));
+  push_client_string_to_both(wstring(message_second));
 }
 
 HANDLE Game::get_thread_handle_ready_event(){

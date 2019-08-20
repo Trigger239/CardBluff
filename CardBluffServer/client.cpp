@@ -193,6 +193,17 @@ void Client::push_string(bool* _terminate, const wchar_t* format, ...){
   push_string(str, _terminate);
 }
 
+void Client::push_string(const wchar_t* format, ...){
+  va_list va;
+  wchar_t c_str[1024];
+  std::wstring str;
+  va_start(va, format);
+  vswprintf(c_str, format, va);
+  va_end(va);
+  str.assign(c_str);
+  push_string(str);
+}
+
 bool Client::queue_is_empty(bool* _terminate){
   bool ret;
 

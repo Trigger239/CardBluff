@@ -10,6 +10,7 @@
 #include <iterator>
 #include <algorithm>
 #include <cwctype>
+#include <queue>
 
 #include "client.h"
 #include "combinations.h"
@@ -31,6 +32,24 @@ enum RoundResult{
   TIE_IN_ROUND = 4,
   TIE_IN_GAME = 5
 };
+
+typedef enum{
+  MOVE_COMMAND,
+  DISCONNECT,
+} command_type_t;
+
+struct Command{
+  Client* sender;
+  wstring cmd;
+  CurrentMove move;
+  command_type_t type;
+  chrono::high_resolution_clock::time_point t;
+  Command(Client* sender,
+            wstring cmd,
+            CurrentMove move,
+            command_type_t type);
+};
+
 #define FinishedGame(x) ((x == FIRST_PLAYER_LOST_GAME) || (x == SECOND_PLAYER_LOST_GAME) || (x == TIE_IN_GAME))
 CurrentMove negation(const CurrentMove&);
 
@@ -42,18 +61,21 @@ public:
        CurrentMove current_move);
   ~Game();
 
+  void push_command(Client* client, const wstring& command);
+  void push_disconnect(Client* client);
+
   //This should be called from special game thread
   void process(bool* _terminate);
 
   //This should be called after the Game object created
-  void start_round(bool* _terminate = nullptr);
+  void start_round();
 
   //This should be called from client thread
-  void make_move(Client* client, const std::wstring& command, bool* _terminate);
+  void make_move(Command cmd);
 
   //This should be called then client finishes the game by disconnect
   //or something else (this client always loses the game).
-  void finish(const RoundResult& res, bool* _terminate = nullptr);
+  void finish(const RoundResult& res);
 
   HANDLE get_thread_handle_ready_event();
 
@@ -63,13 +85,13 @@ public:
   Client* get_second_player() const;
 
 private:
-  HANDLE terminate_event;
-  HANDLE move_event;
   HANDLE thread_handle_ready_event;
   HANDLE thread;
+  HANDLE command_queue_mutex;
 
-  CRITICAL_SECTION finish_critical_section;
-  CRITICAL_SECTION make_move_critical_section;
+  queue<Command> command_queue;
+  chrono::high_resolution_clock::time_point move_start_time;
+  bool finished;
 
   union{
     struct{
@@ -93,31 +115,29 @@ private:
   mt19937 gnr;
   vector<int> current_combination;
 
-
   vector<uint8_t> generate_shuffled_array_of_cards();
   void generate_cards();
 
-  bool is_valid_command(const std::wstring& command);
-
-  void send_next_move_prompts(bool* _terminate = nullptr);
-  void send_card_messages_to_owners(bool* _terminate);
-  void send_card_messages_to_both_players(bool* _terminate);
-  void send_round_result_messages(Client* client, bool* _terminate);
+  void send_next_move_prompts();
+  void send_card_messages_to_owners();
+  void send_card_messages_to_both_players();
+  void send_round_result_messages(Client* client);
 
   void alternate_current_move();
   void alternate_first_move();
   Client* get_currently_moving_player();
   Client* get_currently_not_moving_player();
   bool makes_current_move(Client* client);
-  void player_loses_round(bool* _terminate, const CurrentMove& cur);
-  void tie_in_round(bool* _terminate);
+  void player_loses_round(const CurrentMove& cur);
+  void tie_in_round();
   uint8_t game_result() const;
-  void report_round_results(bool* _terminate, const RoundResult& res);
-  void send_card_numbers_to_both_players(bool* _terminate, const RoundResult& res);
-  void push_client_string_to_both(bool* _terminate, const wstring &str, Client* cl);
-  void send_card_messages_to_one_player(bool* _terminate, Client* client);
-  void push_string_to_both(bool* _terminate, const wstring &str);
-  void send_card_numbers_to_one_player(bool* _terminate, Client* client, const wstring& zero_line, const wstring& first_line, const wstring& second_line);
+  void report_round_results(const RoundResult& res);
+  void send_card_numbers_to_both_players(const RoundResult& res);
+  void push_client_string_to_both(const wstring &str, Client* cl);
+  void push_client_string_to_client(const wstring &str, Client* receiver, Client* sender = nullptr);
+  void send_card_messages_to_one_player(Client* client);
+  void push_string_to_both(const wstring &str);
+  void send_card_numbers_to_one_player(Client* client, const wstring& zero_line, const wstring& first_line, const wstring& second_line);
 };
 
 #endif // GAME_H

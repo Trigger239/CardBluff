@@ -18,6 +18,7 @@
 
 #define DEFAULT_RATING 1200
 #define MOVE_TIMEOUT 60000
+#define RECONNECT_TIMEOUT (3600 * 12)
 
 #include "util/util.h"
 
