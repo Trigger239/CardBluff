@@ -1,3 +1,33 @@
 208 160 194 176 208 160 194 177 208 160 208 134 0 
 2: Waiting for client
 Opponent finding thread started
+Client connected
+Waiting for client
+Send thread created
+New client: Receive thread created
+New client: Nickname message received: 'imp'
+New client 'imp': Password message received: 'a7efe80515ef3188dca116084c6bcddcc402f2a0c2073ced83be1305cd0fa50c'
+Pass from database: '110b6446ba73be5e166a2d4923934d46ef863f055c0dca048a00f471a4b43693'
+Waiting pass: 'a7efe80515ef3188dca116084c6bcddcc402f2a0c2073ced83be1305cd0fa50c' (salt '4711457fadbbf7f1')
+New client 'imp': Password OK
+Client connected
+Waiting for client
+Send thread created
+New client: Receive thread created
+New client: Nickname message received: 'pimp'
+New client 'pimp': Disconnected (receive thread)
+Send thread for client 0 terminated
+New client 'pimp': Receive thread terminated
+Client connected
+Send thread created
+Waiting for client
+New client: Receive thread created
+New client: Nickname message received: 'IMP'
+New client 'IMP': Password message received: '6210466691ee6d116f31170f8ddc10b9b38e9f3806e37480af9e59f03fe28c44'
+Pass from database: '130229cd36251accf673a6bbd04ae063a6f1f8aa92bda3bec573b679d79f75e5'
+Waiting pass: '6210466691ee6d116f31170f8ddc10b9b38e9f3806e37480af9e59f03fe28c44' (salt 'fe73ee90fb9dfad4')
+New client 'IMP': Password OK
+Duel found: IMP VS imp
+Game thread started
+Generating cards: 5, 5
+Sending card messages

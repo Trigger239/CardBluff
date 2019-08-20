@@ -76,12 +76,11 @@ public:
   int receive_data(char* data, int data_size, bool* _terminate = nullptr);
   int send_data(const char* data, int data_size, bool* _terminate = nullptr);
 
-  void push_string(std::wstring str, bool* _terminate = nullptr);
-  void push_string(bool* _terminate, const wchar_t* format, ...);
-  void push_string(const wchar_t* format, ...);
+  void push_string(std::wstring str);
+  void push_string_format(const wchar_t* format, ...);
   bool queue_is_empty(bool* _terminate = nullptr);
   int send_from_queue(bool* _terminate = nullptr);
-  void copy_strings(Client* dest_client, bool* _terminate = nullptr);
+  void copy_strings(Client* dest_client);
 
   void close_socket();
 

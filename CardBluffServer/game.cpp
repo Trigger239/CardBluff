@@ -215,7 +215,7 @@ void Game::push_client_string_to_both(const wstring &str, Client* cl = nullptr)
 void Game::push_client_string_to_client(const wstring &str, Client* receiver, Client* sender)
 {
     wstring addend = sender ? USER_PREFIX + sender->get_nickname_with_color() + L":" : SERVER_PREFIX;
-    receiver->push_string((addend + L" " + str).c_str());
+    receiver->push_string(addend + L" " + str);
 }
 void Game::make_move(Command cmd){
   assert(cmd.type == MOVE_COMMAND);

@@ -329,13 +329,13 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             client->push_string(L"SERVER: Please enter password.");
 
             unsigned long long salt_num = random.generate();
-            client->push_string(L"password?%08x%08x",
+            client->push_string_format(L"password?%08x%08x",
                                 (unsigned int) (salt_num >> 32), (unsigned int) (salt_num & 0xFFFFFFFF));
             //client->set_id(id);
             client->set_state(WAIT_PASSWORD);
           }
           else{
-            client->push_string((wstring() + L"SERVER: You are a new user, %ls. Please enter your password to register.").c_str(),
+            client->push_string_format(L"SERVER: You are a new user, %ls. Please enter your password to register.",
                                 client->get_nickname_with_color().c_str());
             client->push_string(L"password_first?");
             client->set_state(WAIT_PASSWORD_REGISTER_FIRST);
@@ -352,7 +352,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
           new_password.assign(receive_buffer.c_str() + 15);
           client->push_string(L"SERVER: Please re-enter your password.");
           unsigned long long salt_num = random.generate();
-            client->push_string(L"password_second?%08x%08x",
+            client->push_string_format(L"password_second?%08x%08x",
                                 (unsigned int) (salt_num >> 32), (unsigned int) (salt_num & 0xFFFFFFFF));
           client->set_state(WAIT_PASSWORD_REGISTER_SECOND);
         }
@@ -440,7 +440,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             log("New client '%ls': Password OK\n", client->get_nickname().c_str());
 
             client->push_string(L"auth_ok!");
-            client->push_string(L"SERVER: Welcome, " + client->get_nickname_with_color() + L'!');
+            client->push_string(L"SERVER: Welcome, " + client->get_nickname_with_color() + L"!");
 
             client->set_authorized(true);
 

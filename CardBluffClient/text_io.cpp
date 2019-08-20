@@ -78,7 +78,7 @@ bool set_console_font(const wchar_t* font)
   {
     info.FontFamily   = FF_DONTCARE;
     info.dwFontSize.X = 0;  // leave X as zero
-    info.dwFontSize.Y = 14;
+    info.dwFontSize.Y = 15;
     info.FontWeight   = 400;
     wcscpy(info.FaceName, font);
     if (SetCurrentConsoleFontEx(StdOut, FALSE, &info))

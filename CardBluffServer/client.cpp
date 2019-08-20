@@ -164,36 +164,13 @@ int Client::send_data(const char* data, int data_size, bool* _terminate){
   return res;
 }
 
-void Client::push_string(std::wstring str, bool* _terminate){
-  if(_terminate == nullptr){
-    WaitForSingleObject(send_queue_mutex, INFINITE);
-    send_queue.push(str);
-    ReleaseMutex(send_queue_mutex);
-    return;
-  }
-
-  *_terminate = false;
-
-  if(wait_mutex(send_queue_mutex) == WAIT_OBJECT_0 + 1){
-    *_terminate = true;
-    return;
-  }
+void Client::push_string(std::wstring str){
+  WaitForSingleObject(send_queue_mutex, INFINITE);
   send_queue.push(str);
   ReleaseMutex(send_queue_mutex);
 }
 
-void Client::push_string(bool* _terminate, const wchar_t* format, ...){
-  va_list va;
-  wchar_t c_str[1024];
-  std::wstring str;
-  va_start(va, format);
-  vswprintf(c_str, format, va);
-  va_end(va);
-  str.assign(c_str);
-  push_string(str, _terminate);
-}
-
-void Client::push_string(const wchar_t* format, ...){
+void Client::push_string_format(const wchar_t* format, ...){
   va_list va;
   wchar_t c_str[1024];
   std::wstring str;
@@ -281,7 +258,7 @@ std::wstring Client::get_nickname(){
 
 std::wstring Client::get_nickname_with_color()
 {
-    return COLOR_ESCAPE + get_nickname() + COLOR_ESCAPE;
+    return wstring(COLOR_ESCAPE + get_nickname() + COLOR_ESCAPE);
 }
 
 void Client::set_id(long long _id){
@@ -416,30 +393,11 @@ void Client::close_socket(){
   closesocket(socket);
 }
 
-void Client::copy_strings(Client* dest_client, bool* _terminate){
-  if(_terminate == nullptr){
-    WaitForSingleObject(send_queue_mutex, INFINITE);
-    while(!send_queue.empty()){
-      dest_client->push_string(send_queue.front());
-      send_queue.pop();
-    }
-    ReleaseMutex(send_queue_mutex);
-    return;
-  }
-
-  *_terminate = false;
-
-  if(wait_mutex(send_queue_mutex) == WAIT_OBJECT_0 + 1){
-    *_terminate = true;
-    return;
-  }
+void Client::copy_strings(Client* dest_client){
+  WaitForSingleObject(send_queue_mutex, INFINITE);
   while(!send_queue.empty()){
-      dest_client->push_string(send_queue.front(), _terminate);
-      if(*_terminate){
-        ReleaseMutex(send_queue_mutex);
-        return;
-      }
-      send_queue.pop();
-    }
+    dest_client->push_string(send_queue.front());
+    send_queue.pop();
+  }
   ReleaseMutex(send_queue_mutex);
 }
