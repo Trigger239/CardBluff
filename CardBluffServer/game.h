@@ -121,7 +121,7 @@ private:
   void send_next_move_prompts();
   void send_card_messages_to_owners();
   void send_card_messages_to_both_players();
-  void send_round_result_messages(Client* client);
+  //void send_round_result_messages(Client* client);
 
   void alternate_current_move();
   void alternate_first_move();

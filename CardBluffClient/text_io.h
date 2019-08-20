@@ -16,11 +16,13 @@
 #define COLOR_SPADES 7
 #define COLOR_CLUBS 8
 #define COLOR_MESSAGE_ERROR 5
+#define COLOR_MESSAGE_HIGHLIGHT 9
 
 #define SERVER_PREFIX L"SERVER:"
 #define CARDS_PREFIX L"CARDS:"
 #define USER_PREFIX L"USER "
 #define ERROR_PREFIX L"ERROR:"
+#define COLOR_ESCAPE L'%'
 
 typedef enum
 {

@@ -109,8 +109,8 @@ void find_opponent() {
           client1->set_finding_duel(false);
           client2->set_finding_duel(false);
 
-          client1->push_string(L"SERVER: Your opponent is " + client2->get_nickname());
-          client2->push_string(L"SERVER: Your opponent is " + client1->get_nickname());
+          client1->push_string(L"SERVER: Your opponent is " COLOR_ESCAPE + client2->get_nickname() + COLOR_ESCAPE);
+          client2->push_string(L"SERVER: Your opponent is " COLOR_ESCAPE + client1->get_nickname() + COLOR_ESCAPE);
 
           Game* game = client1->enter_game(client2);
 
@@ -335,7 +335,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             client->set_state(WAIT_PASSWORD);
           }
           else{
-            client->push_string(L"SERVER: You are a new user, %ls. Please enter your password to register.",
+            client->push_string((wstring() + L"SERVER: You are a new user, %" COLOR_ESCAPE L"%ls%" COLOR_ESCAPE L". Please enter your password to register.").c_str(),
                                 client->get_nickname().c_str());
             client->push_string(L"password_first?");
             client->set_state(WAIT_PASSWORD_REGISTER_FIRST);
@@ -383,7 +383,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             }
 
             client->push_string(L"auth_ok!");
-            client->push_string(L"SERVER: Welcome, " + client->get_nickname() + L"! You are registered now.");
+            client->push_string(L"SERVER: Welcome, " COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L"! You are registered now.");
             client->set_authorized(true);
 
             bool exists;
@@ -440,7 +440,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             log("New client '%ls': Password OK\n", client->get_nickname().c_str());
 
             client->push_string(L"auth_ok!");
-            client->push_string(L"SERVER: Welcome, " + client->get_nickname() + L"!");
+            client->push_string(L"SERVER: Welcome, " COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L"!");
 
             client->set_authorized(true);
 
@@ -500,7 +500,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
       case IN_GAME:
         if(wcsncmp(remove_spaces(receive_buffer).c_str(), L"/", 1) != 0){ //not a command
-          client->get_opponent()->push_string(USER_PREFIX + client->get_nickname() + L": " +  receive_buffer);
+          client->get_opponent()->push_string(USER_PREFIX COLOR_ESCAPE + client->get_nickname() + COLOR_ESCAPE L": " +  receive_buffer);
         }
         else if(wcscmp(receive_buffer.c_str(), L"/help") == 0){
           client->push_string(L"SERVER: Command '/help' is not supported yet.");

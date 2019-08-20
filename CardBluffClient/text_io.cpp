@@ -125,6 +125,8 @@ bool console_init(void){
     init_pair(COLOR_DIAMONDS, COLOR_YELLOW, COLOR_BLACK);
     init_pair(COLOR_SPADES, COLOR_GREEN, COLOR_BLACK);
     init_pair(COLOR_CLUBS, COLOR_BLUE, COLOR_BLACK);
+    init_color(COLOR_MAGENTA, 1000, 500, 0);
+    init_pair(COLOR_MESSAGE_HIGHLIGHT, COLOR_MAGENTA, COLOR_BLACK);
   }
 
   int rows, cols;
@@ -177,6 +179,44 @@ int win_wprintw(WINDOW* win, const char* format, ...){
   ret = use_win(win, [&](WINDOW* w){int res = vwprintw(w, (const char*) format, args); wrefresh(w); return res;});
   va_end(args);
   return ret;
+}
+
+int win_print_with_highlight(WINDOW* win, const wchar_t* str, int default_color = 0){
+  bool highlight_on = false;
+  bool backslash_found = false;
+  while(*str){
+    if(backslash_found){
+      if(*str != L'\\' && *str != COLOR_ESCAPE)
+        if(waddwstr(win, L"\\") == ERR) return ERR;
+      if(waddnwstr(win, str, 1) == ERR) return ERR;
+      backslash_found = false;
+    }
+    else if(*str == L'\\'){
+      backslash_found = true;
+    }
+    else if(*str == COLOR_ESCAPE){
+      highlight_on = !highlight_on;
+      if(highlight_on){
+        if(default_color && (wattroff(win, COLOR_PAIR(default_color)) == ERR)) return ERR;
+        if(wattron(win, COLOR_PAIR(COLOR_MESSAGE_HIGHLIGHT)) == ERR) return ERR;
+      }
+      else{
+        if(wattroff(win, COLOR_PAIR(COLOR_MESSAGE_HIGHLIGHT)) == ERR) return ERR;
+        if(default_color && (wattron(win, COLOR_PAIR(default_color)) == ERR)) return ERR;
+      }
+    }
+    else{
+      if(waddnwstr(win, str, 1) == ERR) return ERR;
+    }
+    str++;
+  }
+  if(backslash_found)
+    if(waddwstr(win, L"\\") == ERR) return ERR;
+  if(highlight_on){
+    if(wattroff(win, COLOR_PAIR(COLOR_MESSAGE_HIGHLIGHT)) == ERR) return ERR;
+    if(default_color && wattron(win, COLOR_PAIR(default_color)) == ERR) return ERR;
+  }
+  return OK;
 }
 
 bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
@@ -320,7 +360,8 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
 
       if(use_win(output_win, [&](WINDOW* w){
           if(wattron(w, COLOR_PAIR(COLOR_INPUT_ECHO)) == ERR) return ERR;
-          if(waddwstr(w, input_buffer.c_str()) == ERR) return ERR;
+          win_print_with_highlight(w, input_buffer.c_str(), COLOR_INPUT_ECHO);
+//          if(waddwstr(w, input_buffer.c_str()) == ERR) return ERR;
           if(wattroff(w, COLOR_PAIR(COLOR_INPUT_ECHO)) == ERR) return ERR;
           return wrefresh(w);
         }) == ERR){
@@ -346,7 +387,7 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
               if(wattron(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
               if(waddwstr(w, SERVER_PREFIX) == ERR) return ERR;
               if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
-              if(waddwstr(w, str + wcslen(SERVER_PREFIX)) == ERR) return ERR;
+              if(win_print_with_highlight(w, str + wcslen(SERVER_PREFIX)) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
               return wrefresh(w);
             });
@@ -380,7 +421,7 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
               if(wattron(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
               if(waddwstr(w, SERVER_PREFIX L" ") == ERR) return ERR;
               if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
-              if(waddwstr(w, tok) == ERR) return ERR;
+              if(win_print_with_highlight(w, tok) == ERR) return ERR;
               for(auto card: cards){
                 if(waddnwstr(w, &card.second, 1) == ERR) return ERR;
                 switch(card.first){
@@ -419,6 +460,13 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
               if(wattron(w, COLOR_PAIR(COLOR_MESSAGE_ERROR)) == ERR) return ERR;
               if(waddwstr(w, str) == ERR) return ERR;
               if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
+              if(waddwstr(w, L"\n") == ERR) return ERR;
+              return wrefresh(w);
+            });
+  }
+  else if(wcsncmp(str, USER_PREFIX, wcslen(USER_PREFIX)) == 0){
+    return use_win(win, [&](WINDOW* w){
+              if(waddwstr(w, str + wcslen(USER_PREFIX)) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
               return wrefresh(w);
             });
