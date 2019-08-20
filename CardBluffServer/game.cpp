@@ -177,10 +177,13 @@ void Game::player_loses_round(const CurrentMove& cur)
     report_round_results(res);
     if (FinishedGame(res))
         finish(res);
+    else
+        start_round();
 }
 void Game::tie_in_round()
 {
     report_round_results(TIE_IN_ROUND);
+    start_round();
 }
 void Game::report_round_results(const RoundResult& res)
 {
