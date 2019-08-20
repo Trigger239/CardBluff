@@ -86,7 +86,7 @@ void Game::process(bool* _terminate){
     if(chrono::duration_cast<chrono::duration<double>>(now - move_start_time).count() * 1000.0 > MOVE_TIMEOUT){
 
       push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L", you haven't done your move in time!", get_currently_moving_player());
-      push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L" haven't done his move in time!", get_currently_not_moving_player());
+      push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L" hasn't done the move in time!", get_currently_not_moving_player());
 
       if(first_player_card_number == START_CARD_NUMBER &&
          second_player_card_number == START_CARD_NUMBER){
@@ -177,10 +177,13 @@ void Game::player_loses_round(const CurrentMove& cur)
     report_round_results(res);
     if (FinishedGame(res))
         finish(res);
+    else
+        start_round();
 }
 void Game::tie_in_round()
 {
     report_round_results(TIE_IN_ROUND);
+    start_round();
 }
 void Game::report_round_results(const RoundResult& res)
 {
@@ -243,10 +246,10 @@ void Game::make_move(Command cmd){
 
   if(makes_current_move(client)){
     //Sending move command to currently not moving player
-    push_client_string_to_client(lcws, get_currently_not_moving_player(), client);
 
     if (lcws == L"/r")
     {
+        push_client_string_to_client(cws, get_currently_not_moving_player(), client);
         if (Hand::is_combination_nothing(current_combination))
             push_client_string_to_client(client->get_nickname_with_color() + L", запрещено вскрываться на первом ходу.", client); // TODO: ENGLISH
         else if (union_of_cards.check_combination(current_combination))
@@ -264,6 +267,7 @@ void Game::make_move(Command cmd){
     }
     else if (lcws == L"/b")
     {
+        push_client_string_to_client(cws, get_currently_not_moving_player(), client);
         //push_client_string_to_client(cws, client, get_currently_not_moving_player());
         if (Hand::is_combination_nothing(current_combination))
             push_client_string_to_client(client->get_nickname_with_color() + L", запрещено блокировать на первом ходу.", client); // TODO: ENGLISH
@@ -289,9 +293,10 @@ void Game::make_move(Command cmd){
     }
     else if (wcsncmp(lcws.c_str(), L"/m", 2) == 0)
     {
+        push_client_string_to_client(cws.substr(0, 2) + L" " + cws.substr(2, ((int)((cws).size())) - 2), get_currently_not_moving_player(), client);
         vector<int> combination;
         //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-        wstring transcript = Hand::parse_m_command(lcws.substr(2, ((int)((cws).size())) - 2), combination);
+        wstring transcript = Hand::parse_m_command(cws.substr(2, ((int)((cws).size())) - 2), combination);
         if (transcript == L"")
         {
             if (Hand::less_combination(current_combination, combination))
@@ -311,6 +316,8 @@ void Game::make_move(Command cmd){
             push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", " + transcript + L"."); // TODO: ENGLISH
         }
     }
+    else
+        push_client_string_to_client(cws, get_currently_not_moving_player(), client);
 
   }
   else{

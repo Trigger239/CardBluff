@@ -14,6 +14,7 @@ Client connected
 Waiting for client
 Send thread created
 New client: Receive thread created
+<<<<<<< HEAD
 New client: Nickname message received: 'pimp'
 New client 'pimp': Disconnected (receive thread)
 Send thread for client 0 terminated
@@ -31,3 +32,34 @@ Duel found: IMP VS imp
 Game thread started
 Generating cards: 5, 5
 Sending card messages
+=======
+Client connected
+Waiting for client
+Send thread created
+New client: Receive thread created
+New client: Nickname message received: 'IMP'
+New client 'IMP': Password message received: '4738a9d60e56e760877430f3cb31944824403c31ffd0dd2bff7ce012b2ae77f4'
+Pass from database: '130229cd36251accf673a6bbd04ae063a6f1f8aa92bda3bec573b679d79f75e5'
+Waiting pass: '4738a9d60e56e760877430f3cb31944824403c31ffd0dd2bff7ce012b2ae77f4' (salt '792a6738e7bdcab8')
+New client 'IMP': Password OK
+New client: Disconnected (receive thread)
+Send thread for client 0 terminated
+New client: Receive thread terminated
+New client: Nickname message received: '/findduel'
+New client '/findduel': Disconnected (receive thread)
+Send thread for client 0 terminated
+New client '/findduel': Receive thread terminated
+Client connected
+Waiting for client
+Send thread created
+New client: Receive thread created
+New client: Nickname message received: 'senya_petuh'
+New client 'senya_petuh': First register password message received: 'ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'
+New client 'senya_petuh': Second register password message received: 'a23f9177788b0446b6fbf5a04784b1e9083272442a887ff05d0f00d35100fb9b'
+New client 'senya_petuh': Second register password OK
+Duel found: senya_petuh VS IMP
+Game thread started
+Generating cards: 5, 5
+Sending card messages
+Client 7: Disconnected (receive thread)
+>>>>>>> b109b9dfeb47aa732b83aa2ef45076730d9d4023
