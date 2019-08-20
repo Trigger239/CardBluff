@@ -521,6 +521,7 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
     static const wstring INCORRECT_RANK = L"incorrect rank identifier: ";
     static const wstring MISSING_SUIT = L"missing suit identifier";
     static const wstring INCORRECT_SUIT = L"incorrect suit identifier: ";
+    static const wstring EXCESS_INFORMATION = L"excess information: ";
 
     int number_of_symbol = 0;
 
@@ -532,6 +533,7 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
     uint8_t combination_type = it_combination->second;
     combination.push_back(combination_type);
     uint8_t number_of_ranks = HOW_MANY_RANKS[combination_type];
+    uint8_t number_of_suits = HAS_SUIT[combination_type];
 
     for (int i = 0; i < number_of_ranks; ++i)
     {
@@ -545,7 +547,7 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
         combination.push_back(rank);
     }
 
-    if (HAS_SUIT[combination_type])
+    if (number_of_suits)
     {
         number_of_symbol = 1 + number_of_ranks;
         if (((int)((command).size())) <= number_of_symbol)
@@ -556,6 +558,8 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
         uint8_t suit = it_suit->second;
         combination.push_back(suit);
     }
+
+    if (((int)((command).size())) > 1 + number_of_ranks + number_of_suits)
 
     if (combination_type == TWO_PAIRS)
         sort(combination.begin() + 1, combination.begin() + 3);
