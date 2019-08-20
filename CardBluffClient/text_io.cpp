@@ -60,7 +60,9 @@ lpConsoleCurrentFontEx);
 }
 #endif
 
+#ifdef USE_MUTEX
 HANDLE curses_mutex;
+#endif // USE_MUTEX
 
 WINDOW* input_win;
 WINDOW* output_win;
@@ -91,6 +93,13 @@ bool set_console_font(const wchar_t* font)
   return false;
 }
 
+int rows, cols;
+int output_win_py;
+
+int output_win_refresh(WINDOW* w){
+  return prefresh(w, (output_win_py = max(getcury(w) - rows + INPUT_WINDOW_ROWS + 1, 0)), 0, 0, 0, rows - INPUT_WINDOW_ROWS - 1, cols - 1);
+}
+
 bool console_init(void){
   //setlocale(LC_ALL, "ru_RU.utf8");
   setlocale(LC_ALL, "");
@@ -101,9 +110,11 @@ bool console_init(void){
   if(!SetConsoleTitleW(L"CardBluff"))
     return false;
 
+#ifdef USE_MUTEX
   curses_mutex = CreateMutex(NULL, FALSE, NULL);
   if(curses_mutex == INVALID_HANDLE_VALUE)
     return false;
+#endif // USE_MUTEX
 
   initscr();
 
@@ -129,14 +140,16 @@ bool console_init(void){
     init_pair(COLOR_MESSAGE_HIGHLIGHT, COLOR_MAGENTA, COLOR_BLACK);
   }
 
-  int rows, cols;
   getmaxyx(stdscr, rows, cols);
   max_input_length = cols - 2;
 
-  output_win = newwin(rows - INPUT_WINDOW_ROWS, cols, 0, 0);
+  output_win_py = 0;
+  //output_win = newwin(rows - INPUT_WINDOW_ROWS, cols, 0, 0);
+  output_win = newpad(OUTPUT_WINDOW_ROWS, cols);
   refresh();
   wattron(output_win, A_BOLD);
   scrollok(output_win, true);
+  output_win_refresh(output_win);
 
   input_win = newwin(INPUT_WINDOW_ROWS, cols, rows - INPUT_WINDOW_ROWS, 0);
   refresh();
@@ -153,23 +166,23 @@ bool console_init(void){
 }
 
 int use_win(WINDOW *win, std::function<int(WINDOW*)> cb_func){
-//  auto callback = [=](WINDOW* w){
-//    return cb_func(w);
-//  };
-//  auto thunk = [](WINDOW* w, void* arg){ // note thunk is captureless
-//    return (*static_cast<decltype(callback)*>(arg))(w);
-//  };
-
   int ret;
+#ifdef USE_MUTEX
   WaitForSingleObject(curses_mutex, INFINITE);
-  //ret = use_window(win, thunk, &callback);
+#endif // USE_MUTEX
   ret = cb_func(win);
+#ifdef USE_MUTEX
   ReleaseMutex(curses_mutex);
+#endif // USE_MUTEX
   return ret;
 }
 
-int win_addwstr(WINDOW* win, const wchar_t* str){
-  return use_win(win, [&](WINDOW* w){int res = waddwstr(w, str); wrefresh(w); return res;});
+int output_win_addwstr(const wchar_t* str){
+  return use_win(output_win, [&](WINDOW* w){int res = waddwstr(w, str); output_win_refresh(w); return res;});
+}
+
+int input_win_addwstr(const wchar_t* str){
+  return use_win(input_win, [&](WINDOW* w){int res = waddwstr(w, str); wrefresh(w); return res;});
 }
 
 int win_wprintw(WINDOW* win, const char* format, ...){
@@ -257,10 +270,12 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
         break;
 
       case KEY_HOME:
+      case KEY_A1:
         cursor = 0;
         break;
 
       case KEY_END:
+      case KEY_C1:
         cursor = input_buffer.size();
         break;
 
@@ -314,6 +329,59 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
         string_ready = true;
         *input_ready = true;
         break;
+
+      case KEY_UP:
+      case KEY_A2:
+        use_win(output_win, [&](WINDOW* w){
+                  //int begy = getbegy(w);
+                  if(output_win_py <= 0)
+                    return OK;
+                  output_win_py--;
+                  return prefresh(w, output_win_py, 0, 0, 0, rows - INPUT_WINDOW_ROWS - 1, cols - 1);
+                });
+        break;
+
+      case KEY_DOWN:
+      case KEY_C2:
+        use_win(output_win, [&](WINDOW* w){
+                  if(output_win_py >= getcury(w) - rows + INPUT_WINDOW_ROWS + 1)
+                    return OK;
+                  output_win_py++;
+                  return prefresh(w, output_win_py, 0, 0, 0, rows - INPUT_WINDOW_ROWS - 1, cols - 1);
+                });
+        break;
+
+      case CTL_HOME:
+      case CTL_PAD7:
+        use_win(output_win, [&](WINDOW* w){
+                  output_win_py = 0;
+                  return prefresh(w, output_win_py, 0, 0, 0, rows - INPUT_WINDOW_ROWS - 1, cols - 1);
+                });
+        break;
+
+      case CTL_END:
+      case CTL_PAD1:
+        use_win(output_win, [&](WINDOW* w){
+                  output_win_py = getcury(w) - rows + INPUT_WINDOW_ROWS + 1;
+                  return prefresh(w, output_win_py, 0, 0, 0, rows - INPUT_WINDOW_ROWS - 1, cols - 1);
+                });
+        break;
+
+      case KEY_PPAGE:
+      case KEY_A3:
+        use_win(output_win, [&](WINDOW* w){
+                output_win_py = max(output_win_py - rows + INPUT_WINDOW_ROWS, 0);
+                  return prefresh(w, output_win_py, 0, 0, 0, rows - INPUT_WINDOW_ROWS - 1, cols - 1);
+                });
+        break;
+
+      case KEY_NPAGE:
+      case KEY_C3:
+        use_win(output_win, [&](WINDOW* w){
+                output_win_py = min(output_win_py + rows - INPUT_WINDOW_ROWS, getcury(w) - rows + INPUT_WINDOW_ROWS + 1);
+                  return prefresh(w, output_win_py, 0, 0, 0, rows - INPUT_WINDOW_ROWS - 1, cols - 1);
+                });
+        break;
       }
     }
     else{
@@ -363,7 +431,7 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
           win_print_with_highlight(w, input_buffer.c_str(), COLOR_INPUT_ECHO);
 //          if(waddwstr(w, input_buffer.c_str()) == ERR) return ERR;
           if(wattroff(w, COLOR_PAIR(COLOR_INPUT_ECHO)) == ERR) return ERR;
-          return wrefresh(w);
+          return output_win_refresh(w);
         }) == ERR){
         ret = false;
       }
@@ -380,16 +448,16 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
   return ret;
 }
 
-int win_addwstr_colored(WINDOW* win, wchar_t* str){
+int output_win_addwstr_colored(wchar_t* str){
 
   if(wcsncmp(str, SERVER_PREFIX, wcslen(SERVER_PREFIX)) == 0){
-    return use_win(win, [&](WINDOW* w){
+    return use_win(output_win, [&](WINDOW* w){
               if(wattron(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
               if(waddwstr(w, SERVER_PREFIX) == ERR) return ERR;
               if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
               if(win_print_with_highlight(w, str + wcslen(SERVER_PREFIX)) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
-              return wrefresh(w);
+              return output_win_refresh(w);
             });
   }
   if(wcsncmp(str, CARDS_PREFIX, wcslen(CARDS_PREFIX)) == 0){
@@ -417,7 +485,7 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
     }
     tok += 3;
 
-    return use_win(win, [&](WINDOW* w){
+    return use_win(output_win, [&](WINDOW* w){
               if(wattron(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
               if(waddwstr(w, SERVER_PREFIX L" ") == ERR) return ERR;
               if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
@@ -456,7 +524,7 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
             });
   }
   if(wcsncmp(str, ERROR_PREFIX, wcslen(ERROR_PREFIX)) == 0){
-    return use_win(win, [&](WINDOW* w){
+    return use_win(output_win, [&](WINDOW* w){
               if(wattron(w, COLOR_PAIR(COLOR_MESSAGE_ERROR)) == ERR) return ERR;
               if(waddwstr(w, str) == ERR) return ERR;
               if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
@@ -465,14 +533,14 @@ int win_addwstr_colored(WINDOW* win, wchar_t* str){
             });
   }
   else if(wcsncmp(str, USER_PREFIX, wcslen(USER_PREFIX)) == 0){
-    return use_win(win, [&](WINDOW* w){
+    return use_win(output_win, [&](WINDOW* w){
               if(win_print_with_highlight(w, str + wcslen(USER_PREFIX)) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
               return wrefresh(w);
             });
   }
   else{
-    return use_win(win, [&](WINDOW* w){
+    return use_win(output_win, [&](WINDOW* w){
               if(waddwstr(w, L"> ") == ERR) return ERR;
               if(waddwstr(w, str) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
