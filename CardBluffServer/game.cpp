@@ -229,7 +229,6 @@ void Game::make_move(Command cmd){
   std::transform(cws.begin(), cws.end(), back_inserter(lcws), ::towlower);
 
   if(lcws == L"/concede"){
-      //Sending move command to currently not moving player
       push_client_string_to_client(lcws, client == first_player ? second_player : first_player, client);
 
       push_client_string_to_client(SERVER_PREFIX L"You conceded!", client);
@@ -252,37 +251,37 @@ void Game::make_move(Command cmd){
             push_client_string_to_client(client->get_nickname() + L", запрещено вскрываться на первом ходу.", client); // TODO: ENGLISH
         else if (union_of_cards.check_combination(current_combination))
         {
-            push_client_string_to_client(cws, client, get_currently_not_moving_player());
+            //push_client_string_to_client(cws, client, get_currently_not_moving_player());
             push_client_string_to_both(client->get_nickname() + L", здесь есть эта комбинация."); // TODO: ENGLISH
             player_loses_round(current_move);
         }
         else
         {
-            push_client_string_to_client(cws, client, get_currently_not_moving_player());
+            //push_client_string_to_client(cws, client, get_currently_not_moving_player());
             push_client_string_to_both(client->get_nickname() + L", здесь нет этой комбинации."); // TODO: ENGLISH
             player_loses_round(negation(current_move));
         }
     }
     else if (lcws == L"/b")
     {
-        push_client_string_to_client(cws, client, get_currently_not_moving_player());
+        //push_client_string_to_client(cws, client, get_currently_not_moving_player());
         if (Hand::is_combination_nothing(current_combination))
             push_client_string_to_client(client->get_nickname() + L", запрещено блокировать на первом ходу.", client); // TODO: ENGLISH
         else if (union_of_cards.is_best_combination(current_combination))
         {
-            push_client_string_to_client(cws, client, get_currently_not_moving_player());
+            //push_client_string_to_client(cws, client, get_currently_not_moving_player());
             push_string_to_both(SERVER_PREFIX L" " + client->get_nickname() + L", это лучшая комбинация."); // TODO: ENGLISH
             tie_in_round();
         }
         else if (union_of_cards.check_combination(current_combination))
         {
-            push_client_string_to_client(cws, client, get_currently_not_moving_player());
+            //push_client_string_to_client(cws, client, get_currently_not_moving_player());
             push_string_to_both(SERVER_PREFIX L" " + client->get_nickname() + L", этой комбинации здесь нет."); // TODO: ENGLISH
             player_loses_round(current_move);
         }
         else
         {
-            push_client_string_to_client(cws, client, get_currently_not_moving_player());
+            //push_client_string_to_client(cws, client, get_currently_not_moving_player());
             push_string_to_both(SERVER_PREFIX L" " + client->get_nickname() + L", это не лучшая комбинация."); // TODO: ENGLISH
                                                                                                                     // TODO: Write the best combination
             player_loses_round(current_move);
@@ -291,7 +290,7 @@ void Game::make_move(Command cmd){
     else if (wcsncmp(lcws.c_str(), L"/m", 2) == 0)
     {
         vector<int> combination;
-        push_client_string_to_client(cws, client, get_currently_not_moving_player());
+        //push_client_string_to_client(cws, client, get_currently_not_moving_player());
         wstring transcript = Hand::parse_m_command(lcws.substr(2, ((int)((cws).size())) - 2), combination);
         if (transcript == L"")
         {
@@ -309,17 +308,19 @@ void Game::make_move(Command cmd){
         }
         else
         {
-            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname() + transcript + L'.'); // TODO: ENGLISH
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname() + L", " + transcript + L'.'); // TODO: ENGLISH
         }
     }
 
   }
   else{
+#ifdef SEND_COMMANDS_WHILE_OTHERS_MOVE
     get_currently_not_moving_player()->
       push_string(SERVER_PREFIX L" It's not your move now!");
     get_currently_moving_player()->
       push_string(SERVER_PREFIX L" Your opponent "
                   L"tried to make a move: '" + command + L"'.");
+#endif
   }
 }
 

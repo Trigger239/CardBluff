@@ -261,6 +261,7 @@ int main(void){
       win_addwstr(output_win, L"Retrieving server IP...\n");
       host = gethostbyname(host_name.c_str());
       if(host != NULL){
+        addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = ((in_addr*)host->h_addr_list[0])->s_addr;
         addr.sin_port = htons(port);
 

@@ -20,6 +20,8 @@
 #define MOVE_TIMEOUT 60000
 #define RECONNECT_TIMEOUT (3600 * 12)
 
+//#define SEND_COMMANDS_WHILE_OTHERS_MOVE
+
 #include "util/util.h"
 
 #endif // COMMON_H

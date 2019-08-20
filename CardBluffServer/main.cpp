@@ -500,7 +500,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
       case IN_GAME:
         if(wcsncmp(remove_spaces(receive_buffer).c_str(), L"/", 1) != 0){ //not a command
-          client->get_opponent()->push_string(client->get_nickname() + L":" +  receive_buffer);
+          client->get_opponent()->push_string(USER_PREFIX + client->get_nickname() + L": " +  receive_buffer);
         }
         else if(wcscmp(receive_buffer.c_str(), L"/help") == 0){
           client->push_string(L"SERVER: Command '/help' is not supported yet.");

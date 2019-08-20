@@ -558,7 +558,7 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
     }
 
     if (combination_type == TWO_PAIRS)
-        sort(combination.begin() + 1, combination.begin() + 2);
+        sort(combination.begin() + 1, combination.begin() + 3);
 
     return L"";
 }
