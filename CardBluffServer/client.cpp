@@ -325,7 +325,7 @@ Game* Client::enter_game(Client* _opponent){
     set_in_game(true);
     set_opponent(_opponent);
     set_state(IN_GAME);
-    Game* g = new Game(this, opponent, FIRST_PLAYER_MOVE);
+    Game* g = new Game(this, opponent);
     set_game(g);
 
     opponent->set_in_game(true);

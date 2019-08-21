@@ -1,12 +1,13 @@
 #include "game.h"
-#include "common.h"
 
 #include <cstdio>
 #include <cwchar>
 #include <cwctype>
 
-#define BUFFER_SIZE 1000
+#include "common.h"
+#include "ratings.h"
 
+#define BUFFER_SIZE 1000
 
 Command::Command(Client* sender,
           wstring cmd,
@@ -19,12 +20,11 @@ Command::Command(Client* sender,
   , t(chrono::high_resolution_clock::now()){};
 
 Game::Game(Client* first_player,
-           Client* second_player,
-           CurrentMove current_move)
-  : finished(false)
+           Client* second_player)
+  : db(db)
+  , finished(false)
   , first_player(first_player)
   , second_player(second_player)
-  , current_move(current_move)
   , gnr(chrono::high_resolution_clock::now().time_since_epoch().count())
   {
     thread_handle_ready_event = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -83,7 +83,7 @@ void Game::process(bool* _terminate){
   }
 
   if(!finished){
-    if(get_remaining_move_time(now) * 1000.0 > MOVE_TIMEOUT){
+    if(get_remaining_move_time(now) <= 0.0){
 
       push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L", you haven't done your move in time!", get_currently_moving_player());
       push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L" hasn't done the move in time!", get_currently_not_moving_player());
@@ -222,8 +222,6 @@ void Game::push_client_string_to_client(const wstring &str, Client* receiver, Cl
 void Game::make_move(Command cmd){
   assert(cmd.type == MOVE_COMMAND);
 
-  move_start_time = cmd.t;
-
   wstring command = cmd.cmd;
   Client* client = cmd.sender;
   std::wstring cws = remove_space_characters(cmd.cmd); // command_without_spaces
@@ -233,8 +231,8 @@ void Game::make_move(Command cmd){
   if(lcws == L"/concede"){
       push_client_string_to_client(lcws, client == first_player ? second_player : first_player, client);
 
-      push_client_string_to_client(SERVER_PREFIX L"You conceded!", client);
-      push_client_string_to_client(SERVER_PREFIX + client->get_nickname_with_color() + L" conceded!",
+      push_client_string_to_client(L"You conceded!", client);
+      push_client_string_to_client(client->get_nickname_with_color() + L" conceded!",
                                    client == first_player ? second_player : first_player);
 
       report_round_results(client == first_player ? FIRST_PLAYER_LOST_GAME : SECOND_PLAYER_LOST_GAME);
@@ -243,9 +241,21 @@ void Game::make_move(Command cmd){
       return;
   }
   if(lcws == L"/tr"){
-      push_client_string_to_client(SERVER_PREFIX + client->get_nickname_with_color() + L", you have " +
-                                   ll_to_wstring(get_remaining_move_time()) + L" second(s) to move.", client);
+      long long tr = get_remaining_move_time() * 10.0;
+      wstring tr_str;
+      tr_str = ll_to_wstring(tr / 10) + L"." + ll_to_wstring(tr % 10);
+
+      if(makes_current_move(client))
+        push_client_string_to_client(client->get_nickname_with_color() + L", you have " +
+                                     tr_str + L" second" + (tr > 10 ? L"s" : L"") + L" to move.", client);
+      else
+        push_client_string_to_client(get_currently_not_moving_player()->get_nickname_with_color() + L" has " +
+                                     tr_str + L" second" + (tr > 10 ? L"s" : L"") + L" to move.", client);
       return;
+  }
+  if(lcws == L"/cards"){
+    client->push_string(cards_to_string(client == first_player ? first_player_cards : second_player_cards));
+    return;
   }
 
   if(makes_current_move(client)){
@@ -297,6 +307,7 @@ void Game::make_move(Command cmd){
     }
     else if (wcsncmp(lcws.c_str(), L"/m", 2) == 0)
     {
+        move_start_time = cmd.t;
         push_client_string_to_client(cws.substr(0, 2) + L" " + cws.substr(2, ((int)((cws).size())) - 2), get_currently_not_moving_player(), client);
         vector<int> combination;
         //push_client_string_to_client(cws, client, get_currently_not_moving_player());
@@ -339,6 +350,43 @@ void Game::finish(const RoundResult& res){
   log("Finishing the game...\n");
   //TODO: Process the LOSE of the client (send messages, update ratings).
 
+  char* z_err_msg;
+  long long delta; //added to first player
+  bool rating_update_ok = false;
+  long long first_player_rating;
+  long long second_player_rating;
+
+  if(res == FIRST_PLAYER_LOST_GAME){
+    if(update_ratings(db, second_player, first_player,
+                      &second_player_rating, &first_player_rating,
+                      &delta, &z_err_msg)){
+      log("Error updating ratings. SQLite error: %s", z_err_msg);
+    }
+    else{
+      rating_update_ok = true;
+      delta = -delta;
+    }
+  }
+  else if(res == SECOND_PLAYER_LOST_GAME){
+    if(update_ratings(db, first_player, second_player,
+                      &first_player_rating, &second_player_rating,
+                      &delta, &z_err_msg)){
+      log("Error updating ratings. SQLite error: %s", z_err_msg);
+    }
+    else{
+      rating_update_ok = true;
+    }
+  }
+  if(rating_update_ok){
+    push_client_string_to_both(L"Ratings:");
+    push_client_string_to_both(first_player->get_nickname_with_color() + L": " +
+                               ll_to_wstring(first_player_rating) + L" (" +
+                               ll_to_wstring(delta, true) + L")");
+    push_client_string_to_both(second_player->get_nickname_with_color() + L": " +
+                               ll_to_wstring(second_player_rating) + L" (" +
+                               ll_to_wstring(-delta, true) + L")");
+  }
+
   first_player->set_in_game(false);
   second_player->set_in_game(false);
   first_player->set_state(WAIT_ENTER_GAME);
@@ -352,14 +400,14 @@ void Game::send_next_move_prompts(){
   wchar_t buf[100];
   swprintf(buf, (wstring() + SERVER_PREFIX L" %ls, you have %u seconds to move.").c_str(),
                   get_currently_moving_player()->get_nickname_with_color().c_str(),
-                  (unsigned int) (MOVE_TIMEOUT / 1000));
+                  (unsigned int) (MOVE_TIMEOUT + 0.5));
     get_currently_moving_player()->
       push_string(wstring() + buf);
     get_currently_not_moving_player()->
-      push_string(SERVER_PREFIX L" Waiting your opponent to move...");
+      push_string(SERVER_PREFIX L" Waiting for your opponent to move...");
 }
 
-wstring cards_to_string(vector<CARD_TYPE> &cards){
+wstring Game::cards_to_string(vector<CARD_TYPE> &cards){
   wchar_t str[BUFFER_SIZE];
   wchar_t* ptr = str;
   swprintf(ptr, CARDS_PREFIX L"%01u", (unsigned) cards.size());
@@ -458,41 +506,16 @@ void Game::send_card_messages_to_owners(){
   second_player->push_string(cards_to_string(second_player_cards));
 }
 
-//client is a loser of a round
-//void Game::send_round_result_messages(Client* client){
-//  wchar_t message_first[BUFFER_SIZE], message_second[BUFFER_SIZE];
-//
-//  if(client->get_id() == first_player->get_id()){
-//    //First player lost round
-//    swprintf(message_first, SERVER_PREFIX L" %s: %u cards :(",
-//            first_player->get_nickname().c_str(),
-//            6/*put new number of cards here*/);
-//    swprintf(message_first, SERVER_PREFIX L" %s: %u cards",
-//            second_player->get_nickname().c_str(),
-//            5/*put new number of cards here*/);
-//  }
-//  else if(client->get_id() == first_player->get_id()){
-//    //Second player lost round
-//    swprintf(message_first, SERVER_PREFIX L" %s: %u cards",
-//            first_player->get_nickname().c_str(),
-//            5/*put new number of cards here*/);
-//    swprintf(message_first, SERVER_PREFIX L" %s: %u cards :(",
-//            second_player->get_nickname().c_str(),
-//            6/*put new number of cards here*/);
-//  }
-//  else
-//    return;
-//
-//  push_client_string_to_both(wstring(message_first));
-//  push_client_string_to_both(wstring(message_second));
-//}
-
 HANDLE Game::get_thread_handle_ready_event(){
   return thread_handle_ready_event;
 }
 
 void Game::set_thread(HANDLE _thread){
   thread = _thread;
+}
+
+void Game::set_db(sqlite3* _db){
+  db = _db;
 }
 
 HANDLE Game::get_thread(){
@@ -549,5 +572,5 @@ bool Game::makes_current_move(Client* client){
 }
 
 double Game::get_remaining_move_time(chrono::high_resolution_clock::time_point now){
-  return chrono::duration_cast<chrono::duration<double>>(now - move_start_time).count();
+  return max(MOVE_TIMEOUT - chrono::duration_cast<chrono::duration<double>>(now - move_start_time).count(), 0.0);
 }

@@ -20,7 +20,7 @@
 #include "climits"
 
 #define DEFAULT_RATING 1200
-#define MOVE_TIMEOUT 60000
+#define MOVE_TIMEOUT 60.0
 #define RECONNECT_TIMEOUT (3600 * 12 * 1000)
 
 //#define SEND_COMMANDS_WHILE_OTHERS_MOVE

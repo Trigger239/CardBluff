@@ -520,7 +520,7 @@ int output_win_addwstr_colored(wchar_t* str){
                 if(&card != &cards.back()) if(waddwstr(w, L", ") == ERR) return ERR;
               }
               if(waddnwstr(w, L"\n", 1) == ERR) return ERR;
-              return wrefresh(w);
+              return output_win_refresh(w);
             });
   }
   if(wcsncmp(str, ERROR_PREFIX, wcslen(ERROR_PREFIX)) == 0){
@@ -529,14 +529,14 @@ int output_win_addwstr_colored(wchar_t* str){
               if(waddwstr(w, str) == ERR) return ERR;
               if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
-              return wrefresh(w);
+              return output_win_refresh(w);
             });
   }
   else if(wcsncmp(str, USER_PREFIX, wcslen(USER_PREFIX)) == 0){
     return use_win(output_win, [&](WINDOW* w){
               if(win_print_with_highlight(w, str + wcslen(USER_PREFIX)) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
-              return wrefresh(w);
+              return output_win_refresh(w);
             });
   }
   else{
@@ -544,7 +544,7 @@ int output_win_addwstr_colored(wchar_t* str){
               if(waddwstr(w, L"> ") == ERR) return ERR;
               if(waddwstr(w, str) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
-              return wrefresh(w);
+              return output_win_refresh(w);
             });
   }
 }

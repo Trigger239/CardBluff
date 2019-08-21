@@ -77,7 +77,16 @@ unordered_set_mt<Game*> games;
 
 DWORD WINAPI game_thread(LPVOID lpParam){
   log("Game thread started\n");
+
+  sqlite3* db;
+  if(sqlite3_open("db.sl3", &db)){
+    log("New game: Error opening database\n");
+    sqlite3_close(db);
+    return 0;
+  };
+
   Game* game = (Game*) lpParam;
+  game->set_db(db);
 
   game->start_round();
 
@@ -85,11 +94,16 @@ DWORD WINAPI game_thread(LPVOID lpParam){
     bool _terminate;
     game->process(&_terminate);
     if(_terminate){
-      delete game;
-      log("Game thread terminated\n");
-      return 0;
+      break;
     }
   }
+
+  delete game;
+  sqlite3_close(db);
+
+  log("Game thread terminated\n");
+
+  return 0;
 }
 
 void find_opponent() {
@@ -483,11 +497,11 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
       case WAIT_ENTER_GAME:
         if(wcsncmp(receive_buffer.c_str(), L"/", 1) != 0){
-          client->push_string(SERVER_PREFIX L" You should find opponent to use chat.");
+          client->push_string(SERVER_PREFIX L" You should find an opponent to use chat.");
         }
         else if(wcscmp(receive_buffer.c_str(), L"/findduel") == 0){
           client->set_finding_duel(true);
-          client->push_string(SERVER_PREFIX L" Finding opponent for you...");
+          client->push_string(SERVER_PREFIX L" Finding an opponent for you...");
           client->set_state(WAIT_OPPONENT);
         }
         else{
@@ -496,6 +510,14 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
         break;
 
       case WAIT_OPPONENT:
+        if(wcsncmp(receive_buffer.c_str(), L"/", 1) != 0){
+          client->push_string(SERVER_PREFIX L" You should find an opponent to use chat.");
+        }
+        else if(remove_space_characters(receive_buffer) == L"/cancel"){
+          client->set_finding_duel(false);
+          client->push_string(SERVER_PREFIX L" Duel finding canceled.");
+          client->set_state(WAIT_ENTER_GAME);
+        }
         break;
 
       case IN_GAME:

@@ -4,8 +4,10 @@
 
 #include "unicode.h"
 const long long BASE = 10;
-std::string ll_to_string(long long a)
+std::string ll_to_string(long long a, bool plus_sign)
 {
+  if(a == 0)
+    return std::string("0");
 	std::string ans;
 	bool b = (a < 0);
 	while (a)
@@ -15,13 +17,15 @@ std::string ll_to_string(long long a)
 	}
 	if (b)
 		ans.push_back('-');
+  else if (plus_sign)
+    ans.push_back('+');
 	std::reverse(ans.begin(), ans.end());
 	return ans;
 }
 
-std::wstring ll_to_wstring(long long a)
+std::wstring ll_to_wstring(long long a, bool plus_sign)
 {
-	return converter.from_bytes(ll_to_string(a));
+	return converter.from_bytes(ll_to_string(a, plus_sign));
 }
 
 std::wstring remove_space_characters(const std::wstring& str)

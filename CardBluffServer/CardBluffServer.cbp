@@ -50,6 +50,8 @@
 		<Unit filename="game.cpp" />
 		<Unit filename="game.h" />
 		<Unit filename="main.cpp" />
+		<Unit filename="ratings.cpp" />
+		<Unit filename="ratings.h" />
 		<Unit filename="sha256/sha256.cpp" />
 		<Unit filename="sqlite/sqlite3.c">
 			<Option compilerVar="CC" />
