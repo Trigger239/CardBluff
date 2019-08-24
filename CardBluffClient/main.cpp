@@ -30,7 +30,7 @@ using namespace std;
 #define PORT 2390
 
 #define NICKNAME_SIZE_MIN 3
-#define NICKNAME_CHARS_NOT_ALLOWED L":"
+#define NICKNAME_CHARS_NOT_ALLOWED L":%"
 #define PASSWORD_SIZE_MIN 4
 
 typedef enum{
@@ -80,7 +80,7 @@ SOCKET create_socket(){
   SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);       //Create the socket
       if(sock == INVALID_SOCKET )
           s_cl("Invalid Socket", WSAGetLastError());
-      else if(sock == SOCKET_ERROR)
+      else if(sock == (SOCKET) SOCKET_ERROR)
           s_cl("Socket Error", WSAGetLastError());
       else
         output_win_addwstr(L"OK\n");
@@ -429,6 +429,13 @@ int main(void){
     case AUTHORIZATION_FAILED:
       connected = false;
       state = CONNECTION_LOST;
+      break;
+
+    case NOT_CONNECTED:
+    case NICKNAME_SENT:
+    case PASSWORD_REGISTER_FIRST_SENT:
+    case PASSWORD_REGISTER_SECOND_SENT:
+    case PASSWORD_SENT:
       break;
     }
 

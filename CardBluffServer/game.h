@@ -15,6 +15,7 @@
 #include "client.h"
 #include "combinations.h"
 #include "database.h"
+#include "util/logger.h"
 
 using namespace std;
 
@@ -77,6 +78,7 @@ public:
   void finish(const RoundResult& res);
 
   HANDLE get_thread_handle_ready_event();
+  Logger& get_logger();
 
   void set_thread(HANDLE _thread);
   void set_db(sqlite3* _db);
@@ -117,6 +119,7 @@ private:
   CurrentMove first_move;
   mt19937 gnr;
   vector<int> current_combination;
+  Logger logger;
 
   vector<uint8_t> generate_shuffled_array_of_cards();
   void generate_cards();

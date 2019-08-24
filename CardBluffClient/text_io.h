@@ -54,7 +54,7 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
                   std::wstring &str, bool hide_input,
                   bool* input_ready);
 
-int output_win_addwstr_colored(wchar_t* str);
+int output_win_addwstr_colored(const wchar_t* str);
 
 #endif // TEXT_IO_H_INCLUDED
 

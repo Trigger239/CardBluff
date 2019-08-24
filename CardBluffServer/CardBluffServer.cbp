@@ -25,6 +25,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add option="-Wl,-strip-all" />
 				</Linker>
 			</Target>
 		</Build>
@@ -36,9 +37,13 @@
 			<Add option="-Wformat" />
 			<Add option="-execution-charset=utf8" />
 			<Add option="-finput-charset=cp1251" />
+			<Add option="-ffunction-sections" />
+			<Add option="-fdata-sections" />
+			<Add option="-Wl,--gc-sections" />
 		</Compiler>
 		<Linker>
 			<Add option="-lws2_32" />
+			<Add option="-Wl,--gc-sections" />
 		</Linker>
 		<Unit filename="client.cpp" />
 		<Unit filename="client.h" />
@@ -58,6 +63,9 @@
 		</Unit>
 		<Unit filename="util/Rand64.cpp" />
 		<Unit filename="util/Rand64.h" />
+		<Unit filename="util/date.h" />
+		<Unit filename="util/logger.cpp" />
+		<Unit filename="util/logger.h" />
 		<Unit filename="util/strlcpy.cpp" />
 		<Unit filename="util/strlcpy.h" />
 		<Unit filename="util/unicode.cpp" />
