@@ -288,7 +288,7 @@ bool Hand::check_flush(const pair<int, int>& rank_suit) const
     int rank = rank_suit.first;
     int suit = rank_suit.second;
     int suit_size = ((int)((suit_rank[suit]).size()));
-    return (suit_rank[suit][rank]) && (suit_size >= 5) && (suit_rank[suit][suit_size - 5] <= rank);
+    return (suit_rank_b[suit][rank]) && (suit_size >= 5) && (suit_rank[suit][suit_size - 5] <= rank);
 }
 vector<int> Hand::find_every_straight() const
 {
