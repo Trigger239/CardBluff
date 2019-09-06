@@ -19,10 +19,13 @@
 #include "util/Rand64.h"
 #include "common.h"
 #include "util/unicode.h"
+#include "util/logger.h"
 
 #include <cstdio>
 #include <io.h>
 #include <fcntl.h>
+
+const char db_filename[] = "db.sl3";
 
 typedef struct _CONSOLE_FONT_INFOEX
 {
@@ -45,28 +48,7 @@ lpConsoleCurrentFontEx);
 }
 #endif
 
-
 using namespace std;
-
-HANDLE stdout_mutex;
-
-ofstream logfile("CardBluffServer.log");
-
-void log(const char* format, ...){
-  va_list args;
-  va_start(args, format);
-  WaitForSingleObject(stdout_mutex, INFINITE);
-  char str[1000];
-  //vprintf(format, args);
-  vsprintf(str, format, args);
-  logfile << string(str);
-  wstring wstr = converter.from_bytes(str);
-  //logfile << wstr;
-  wcout << wstr;
-  logfile.flush();
-  ReleaseMutex(stdout_mutex);
-  va_end(args);
-}
 
 struct thread_params_t{
   SOCKET client;
@@ -76,8 +58,22 @@ unordered_set_mt<Client*> clients;
 unordered_set_mt<Game*> games;
 
 DWORD WINAPI game_thread(LPVOID lpParam){
-  log("Game thread started\n");
   Game* game = (Game*) lpParam;
+
+  Logger& logger = game->get_logger();
+  logger(L"Game thread started");
+
+  sqlite3* db;
+  logger << L"Opening database '" << db_filename << "'..." << Logger::endline;
+  if(sqlite3_open(db_filename, &db)){
+    logger << L"Error opening database '" << db_filename << L"'" << Logger::endline;
+    logger(L"Closing database...");
+    sqlite3_close(db);
+    logger(L"Game thread terminated");
+    return 0;
+  };
+
+  game->set_db(db);
 
   game->start_round();
 
@@ -85,14 +81,21 @@ DWORD WINAPI game_thread(LPVOID lpParam){
     bool _terminate;
     game->process(&_terminate);
     if(_terminate){
-      delete game;
-      log("Game thread terminated\n");
-      return 0;
+      break;
     }
   }
+
+  logger(L"Closing database...");
+  sqlite3_close(db);
+
+  logger(L"Game thread terminated");
+
+  delete game;
+
+  return 0;
 }
 
-void find_opponent() {
+void find_opponent(Logger& logger) {
   Client* client1;
   Client* client2;
   bool first_client_found = false;
@@ -114,14 +117,15 @@ void find_opponent() {
 
           Game* game = client1->enter_game(client2);
 
-          log("Duel found: %ls VS %ls\n", client1->get_nickname().c_str(), client2->get_nickname().c_str());
+          logger << L"Duel found: '" << client1->get_nickname() <<
+                    L"' VS '" << client2->get_nickname() << L"'\n" <<
+                    L"Creating game thread..." << Logger::endline;
 
           clients.unlock();
 
           DWORD thread;
           game->set_thread(CreateThread(NULL, 0, game_thread, (LPVOID) game, 0, &thread));
           SetEvent(game->get_thread_handle_ready_event());
-          //game->start_round();
 
           return;
         }
@@ -156,14 +160,19 @@ Client* find_nickname_waiting_reconnect(const wstring& nickname){
 
 
 DWORD WINAPI server_to_client(LPVOID lpParam){
-  log("Send thread created\n");
   Client* client = (Client*) lpParam;
 
+  Logger logger(L"Client " + ptr_to_wstring(client) + L" (send)");
+  logger(L"Send thread created");
+
   int res;
+  bool prefix_set_nick = false;
+  bool prefix_set_auth = false;
 
   while(true){
     if(WaitForSingleObject(client->get_terminate_event(), 0) == WAIT_OBJECT_0){
-      log("Send thread for client %I64d terminated\n", client->get_id());
+      logger(L"Terminate signal received");
+      logger(L"Send thread terminated");
       return 0;
     }
 
@@ -181,23 +190,34 @@ DWORD WINAPI server_to_client(LPVOID lpParam){
       }
       HANDLE handles[2] = {client->get_reconnect_event(), client->get_terminate_event()};
       if(WaitForMultipleObjects(2, handles, FALSE, INFINITE) == WAIT_OBJECT_0 + 1){
-        log("Send thread for client %I64d terminated\n", client->get_id());
+        logger(L"Terminate signal received");
+        logger(L"Send thread terminated");
         return 0;
       }
     }
 
-    //Sleep(50);
+    if(!prefix_set_nick && client->get_nickname() != L""){
+      logger.set_prefix(L"Client '" + client->get_nickname() + L"'* (send)");
+      prefix_set_nick = true;
+    }
+    if(prefix_set_nick && !prefix_set_auth){
+      logger.set_prefix(L"Client '" + client->get_nickname() + L"' (send)");
+      prefix_set_auth = true;
+    }
   }
 }
 
-void client_to_server_cleanup(Client* client, sqlite3* db){
+void client_to_server_cleanup(Client* client, sqlite3* db, Logger& logger){
+  logger(L"Cleanup...");
   SetEvent(client->get_terminate_event());
+  logger(L"Waiting for send thread to terminate...");
   WaitForSingleObject(client->get_send_thread(), INFINITE);
   ResetEvent(client->get_terminate_event());
 
   if(client->get_state() == IN_GAME){
     Game* game = client->get_game();
 
+    logger(L"Game in progress, waiting in to finish...");
     WaitForSingleObject(game->get_thread_handle_ready_event(), INFINITE);
     HANDLE thread = game->get_thread();
 
@@ -205,37 +225,36 @@ void client_to_server_cleanup(Client* client, sqlite3* db){
     WaitForSingleObject(thread, INFINITE);
   }
 
+  logger(L"Closing socket...");
   client->close_socket();
-
-  if(!client->get_authorized()){
-    if(client->get_state() == WAIT_NICKNAME)
-      log("New client: Receive thread terminated\n");
-    else
-      log("New client '%ls': Receive thread terminated\n", client->get_nickname().c_str());
-  }
-  else
-    log("Client %I64d: Receive thread terminated\n", client->get_id());
 
   clients.erase(client);
   delete client;
 
+  logger(L"Closing database...");
   sqlite3_close(db);
+
+  logger(L"Receive thread terminated");
 }
 
 DWORD WINAPI client_to_server(LPVOID lpParam){
-  log("New client: Receive thread created\n");
   Client* client = (Client*) lpParam;
+
+  Logger logger(L"Client " + ptr_to_wstring(client) + L" (recv)");
+  logger(L"Receive thread created");
 
   int res;
 
   char receive_buffer_raw[RECEIVE_BUFFER_SIZE];
 
   sqlite3* db;
-  if(sqlite3_open("db.sl3", &db)){
-    log("New client: Error opening database\n");
-    client_to_server_cleanup(client, db);
+  logger << L"Opening database '" << db_filename << "'..." << Logger::endline;
+  if(sqlite3_open(db_filename, &db)){
+    logger << L"Error opening database '" << db_filename << L"'" << Logger::endline;
+    client_to_server_cleanup(client, db, logger);
     return 0;
   };
+  logger << L"Database file '" << db_filename << L"' opened" << Logger::endline;
 
   Rand64 random;
   long long id_buffer;
@@ -244,15 +263,8 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
   while(true){
     if(WaitForSingleObject(client->get_terminate_event(), 0) == WAIT_OBJECT_0){
-      if(!client->get_authorized()){
-        if(client->get_state() == WAIT_NICKNAME)
-          log("New client: Receive thread terminated\n");
-        else
-          log("New client '%ls': Receive thread terminated\n", client->get_nickname().c_str());
-      }
-      else
-        log("Client %I64d: Receive thread terminated\n", client->get_id());
-      sqlite3_close(db);
+      logger(L"Terminate signal received");
+      client_to_server_cleanup(client, db, logger);
       return 0;
     }
 
@@ -268,27 +280,25 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
     if(res == 0 || res == SOCKET_ERROR){
       if(!client->get_authorized()){
-        if(client->get_state() == WAIT_NICKNAME)
-          log("New client: Disconnected (receive thread)\n");
-        else
-          log("New client '%ls': Disconnected (receive thread)\n", client->get_nickname().c_str());
-        client_to_server_cleanup(client, db);
+        client_to_server_cleanup(client, db, logger);
         return 0;
       }
 
       ResetEvent(client->get_reconnect_event());
-      log("Client %I64d: Disconnected (receive thread)\n", client->get_id());
+      logger(L"Disconnected (receive thread)");
       client->set_waiting_reconnect(true);
+      logger(L"Waiting reconnect...");
 
       if(WaitForSingleObject(client->get_reconnect_event(), RECONNECT_TIMEOUT) == WAIT_OBJECT_0){
-        log("Client %I64d: Reconnected\n", client->get_id());
+        logger(L"Reconnected");
         skip_processing = true;
       }
       else{
+        logger(L"Reconnect timeout ended");
         if(client->get_in_game()){
           client->get_game()->push_disconnect(client);
         }
-        client_to_server_cleanup(client, db);
+        client_to_server_cleanup(client, db, logger);
         return 0;
       }
     }
@@ -297,35 +307,30 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
       char* z_err_msg;
 
       wstring receive_buffer = converter.from_bytes(receive_buffer_raw);
-//      for(int i = 0; i < receive_buffer.size(); i++){
-//        log("%u ", (unsigned int) receive_buffer[i]);
-//        if(i % 16 == 15)
-//          log("\n");
-//      }
-//      log("receive_buffer_raw = %s\n", receive_buffer_raw);
-//      log("receive_buffer = %ls\n", receive_buffer.c_str());
-//      log("receive_buffer.size = %u\n", (unsigned int) receive_buffer.size());
       switch(client->get_state()){
       case WAIT_NICKNAME:
         if(wcsncmp(receive_buffer.c_str(), L"nickname:", 9) == 0){
-          log("New client: Nickname message received: '%ls'\n", receive_buffer.c_str() + 9);
+          logger << L"Nickname received: " << (receive_buffer.c_str() + 9) << Logger::endline;
           wstring nick;
           nick.assign(receive_buffer.c_str() + 9);
           if(find_nickname_authorized(nick) != nullptr){
-            log("New client: Client with nickname '%ls' already authorized\n", nick.c_str());
-            client_to_server_cleanup(client, db);
+            logger << L"Client with nickname '" << (receive_buffer.c_str() + 9) << "' was already authorized!" << Logger::endline;
+            client_to_server_cleanup(client, db, logger);
             return 0;
           }
           client->set_nickname(nick);
+          logger.set_prefix(L"Client '" + wstring(receive_buffer.c_str() + 9) + L"'* (recv)");
+          logger(L"Checking if this nickname exists in database...");
           bool exists;
           if(db_get_id_by_nickname(db, client->get_nickname(), &exists, &id_buffer, &z_err_msg)){
-            log("New client '%ls': Error getting id from database. SQLite error: %s\n",
-                client->get_nickname().c_str(), z_err_msg);
+            logger << L"Error getting id from database: " << z_err_msg << Logger::endline;
             sqlite3_free(z_err_msg);
-            client_to_server_cleanup(client, db);
+            client_to_server_cleanup(client, db, logger);
             return 0;
           }
           if(exists){
+            logger << L"id found in database: " << id_buffer << Logger::endline;
+            logger(L"Sending password request...");
             client->push_string(SERVER_PREFIX L" Please enter password.");
 
             unsigned long long salt_num = random.generate();
@@ -333,111 +338,127 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
                                 (unsigned int) (salt_num >> 32), (unsigned int) (salt_num & 0xFFFFFFFF));
             //client->set_id(id);
             client->set_state(WAIT_PASSWORD);
+            logger(L"Waiting password hash...");
           }
           else{
+            logger(L"Nickname not found in database. This is a new user");
+            logger(L"Sending first password request...");
             client->push_string_format(SERVER_PREFIX L" You are a new user, %ls. Please enter your password to register.",
                                 client->get_nickname_with_color().c_str());
             client->push_string(L"password_first?");
             client->set_state(WAIT_PASSWORD_REGISTER_FIRST);
+            logger(L"Waiting first register password hash...");
           }
         }
         else
-          log("New client: Wrong nickname message received\n");
+          logger(L"Wrong nickname message received");
         break;
 
       case WAIT_PASSWORD_REGISTER_FIRST:
         if(wcsncmp(receive_buffer.c_str(), L"password_first:", 15) == 0){
-          log("New client '%ls': First register password message received: '%ls'\n",
-              client->get_nickname().c_str(), receive_buffer.c_str() + 15);
+          logger << L"First register password hash received: '" << (receive_buffer.c_str() + 15) << L"'" << Logger::endline;
+
           new_password.assign(receive_buffer.c_str() + 15);
+          logger(L"Sending second register password request...");
           client->push_string(SERVER_PREFIX L" Please re-enter your password.");
           unsigned long long salt_num = random.generate();
             client->push_string_format(L"password_second?%08x%08x",
                                 (unsigned int) (salt_num >> 32), (unsigned int) (salt_num & 0xFFFFFFFF));
+          logger(L"Waiting second register password hash ...");
           client->set_state(WAIT_PASSWORD_REGISTER_SECOND);
         }
         else
-          log("New client '%ls': Wrong first register password message received\n", client->get_nickname().c_str());
+          logger(L"Wrong first register password message received");
         break;
 
       case WAIT_PASSWORD_REGISTER_SECOND:
         if(wcsncmp(receive_buffer.c_str(), L"password_second:", 16) == 0){
-          log("New client '%ls': Second register password message received: '%ls'\n",
-              client->get_nickname().c_str(), receive_buffer.c_str() + 16);
+          logger << L"Second register password hash received: '" << (receive_buffer.c_str() + 16) << L"'" << Logger::endline;
           wstring pass;
 
           wchar_t salt[17];
           unsigned long long salt_num = random.get_last();
           swprintf(salt, L"%08x%08x", (unsigned int) (salt_num >> 32), (unsigned int) (salt_num & 0xFFFFFFFF));
+          logger << L"Salt value is '" << salt << L"'" << Logger::endline;
+
           pass = new_password + wstring(salt);
           pass = converter.from_bytes(sha256(converter.to_bytes(pass)));
 
+          logger << L"Waiting password hash '" << pass << L"'" << Logger::endline;
           if(wcscmp(pass.c_str(), receive_buffer.c_str() + 16) == 0){
-            log("New client '%ls': Second register password OK\n", client->get_nickname().c_str());
+            logger(L"OK! Register password hashes match!");
+
             if(db_add_client(db, client->get_nickname(), new_password, &z_err_msg)){
-              log("New client '%ls': Error adding client to database. SQLite error: %s\n",
-                  client->get_nickname().c_str(), z_err_msg);
+              logger << L"Error adding client to database: " << z_err_msg << Logger::endline;
               sqlite3_free(z_err_msg);
-              client_to_server_cleanup(client, db);
+              client_to_server_cleanup(client, db, logger);
               return 0;
             }
+
+            logger(L"Authorized!");
+            logger.set_prefix(L"Client '" + client->get_nickname() + L"' (recv)");
 
             client->push_string(L"auth_ok!");
             client->push_string(SERVER_PREFIX L" Welcome, " + client->get_nickname_with_color() + L"! You are registered now.");
             client->set_authorized(true);
 
+            logger(L"Getting id from database...");
             bool exists;
             if(db_get_id_by_nickname(db, client->get_nickname(), &exists, &id_buffer, &z_err_msg)){
-              log("New client '%ls': Error getting id from database. SQLite error: %s\n",
-                  client->get_nickname().c_str(), z_err_msg);
+              logger << L"Error getting id from database: " << z_err_msg << Logger::endline;
               sqlite3_free(z_err_msg);
-              client_to_server_cleanup(client, db);
+              client_to_server_cleanup(client, db, logger);
               return 0;
             }
             if(!exists){
-              log("New client '%ls': Newly registered client not found in database\n");
-              client_to_server_cleanup(client, db);
+              logger(L"Error: id not found in database, but we added it there a moment ago!");
+              client_to_server_cleanup(client, db, logger);
               return 0;
             }
+            logger << L"id found in database: " << id_buffer << Logger::endline;
             client->set_id(id_buffer);
+            logger(L"Waiting entering game...");
             client->set_state(WAIT_ENTER_GAME);
           }
           else{
-            log("New client '%ls': Wrong password\n", client->get_nickname().c_str());
+            logger(L"Error: password hashes don't match!");
             client->push_string(L"auth_fail!");
             Sleep(1000);
-            client_to_server_cleanup(client, db);
+            client_to_server_cleanup(client, db, logger);
             return 0;
           }
         }
         else
-          log("New client '%ls': Wrong password message received\n", client->get_nickname().c_str());
+          logger(L"Wrong second register password message received");
         break;
 
       case WAIT_PASSWORD:
         if(wcsncmp(receive_buffer.c_str(), L"password:", 9) == 0){
-          log("New client '%ls': Password message received: '%ls'\n",
-              client->get_nickname().c_str(), receive_buffer.c_str() + 9);
+          logger << L"Password hash received: '" << (receive_buffer.c_str() + 9) << L"'" << Logger::endline;
           wstring pass;
           if(db_get_password(db, id_buffer, &pass, &z_err_msg)){
-            log("New client '%ls': Error getting password from database. SQLite error: %s\n",
-                client->get_nickname().c_str(), z_err_msg);
+            logger << L"Error getting password from database: " << z_err_msg << Logger::endline;
             sqlite3_free(z_err_msg);
-            client_to_server_cleanup(client, db);
+            client_to_server_cleanup(client, db, logger);
             return 0;
           }
 
-          log("Pass from database: '%ls'\n", pass.c_str());
+          logger << L"Password hash from database: '" << pass << L"'" << Logger::endline;
 
           wchar_t salt[17];
           unsigned long long salt_num = random.get_last();
           swprintf(salt, L"%08x%08x", (unsigned int) (salt_num >> 32), (unsigned int) (salt_num & 0xFFFFFFFF));
+          logger << L"Salt value is '" << salt << L"'" << Logger::endline;
+
           pass += wstring(salt);
           pass = converter.from_bytes(sha256(converter.to_bytes(pass)));
-          log("Waiting pass: '%ls' (salt '%ls')\n", pass.c_str(), salt);
+
+          logger << L"Waiting password hash '" << pass << L"'" << Logger::endline;
 
           if(wcscmp(pass.c_str(), receive_buffer.c_str() + 9) == 0){
-            log("New client '%ls': Password OK\n", client->get_nickname().c_str());
+            logger(L"OK! Password hashes match!");
+
+            logger(L"Authorized!");
 
             client->push_string(L"auth_ok!");
             client->push_string(SERVER_PREFIX L" Welcome, " + client->get_nickname_with_color() + L"!");
@@ -446,8 +467,9 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
             Client* old_client = find_nickname_waiting_reconnect(client->get_nickname());
             if(old_client != nullptr){
-              log("New client '%ls': Reconnected client %I64d\n", client->get_nickname().c_str(), old_client->get_id());
+              logger << L"Reconnected client " << ptr_to_wstring(old_client) << Logger::endline;
               SetEvent(client->get_terminate_event());
+              logger.set_prefix(L"Client '" + client->get_nickname() + L"' (temporary)");
               WaitForSingleObject(client->get_send_thread(), INFINITE);
               ResetEvent(client->get_terminate_event());
 
@@ -456,38 +478,44 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
               SetEvent(old_client->get_reconnect_event());
               old_client->set_waiting_reconnect(false);
 
-              log("New client '%ls': Receive thread terminated\n", client->get_nickname().c_str());
-
               clients.erase(client);
               delete client;
 
+              logger(L"Closing database...");
               sqlite3_close(db);
+
+              logger(L"Receive thread terminated");
 
               return 0;
             }
 
             client->set_id(id_buffer);
+
+            logger.set_prefix(L"Client '" + client->get_nickname() + L"' (recv)");
+            logger(L"Waiting entering game...");
+
             client->set_state(WAIT_ENTER_GAME);
           }
           else{
-            log("New client '%ls': Wrong password\n", client->get_nickname().c_str());
+            logger(L"Error: password hashes don't match!");
             client->push_string(L"auth_fail!");
             Sleep(1000);
-            client_to_server_cleanup(client, db);
+            client_to_server_cleanup(client, db, logger);
             return 0;
           }
         }
         else
-          log("New client '%ls': Wrong password message received\n", client->get_nickname().c_str());
+          logger(L"Wrong password message received");
         break;
 
       case WAIT_ENTER_GAME:
         if(wcsncmp(receive_buffer.c_str(), L"/", 1) != 0){
-          client->push_string(SERVER_PREFIX L" You should find opponent to use chat.");
+          client->push_string(SERVER_PREFIX L" You should find an opponent to use chat.");
         }
         else if(wcscmp(receive_buffer.c_str(), L"/findduel") == 0){
+          logger(L"Finding opponent...");
           client->set_finding_duel(true);
-          client->push_string(SERVER_PREFIX L" Finding opponent for you...");
+          client->push_string(SERVER_PREFIX L" Finding an opponent for you...");
           client->set_state(WAIT_OPPONENT);
         }
         else{
@@ -496,6 +524,15 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
         break;
 
       case WAIT_OPPONENT:
+        if(wcsncmp(receive_buffer.c_str(), L"/", 1) != 0){
+          client->push_string(SERVER_PREFIX L" You should find an opponent to use chat.");
+        }
+        else if(remove_space_characters(receive_buffer) == L"/cancel"){
+          logger(L"Opponent finding canceled");
+          client->set_finding_duel(false);
+          client->push_string(SERVER_PREFIX L" Duel finding canceled.");
+          client->set_state(WAIT_ENTER_GAME);
+        }
         break;
 
       case IN_GAME:
@@ -518,9 +555,10 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 }
 
 DWORD WINAPI find_duel_thread(LPVOID lpParam){
-  log("Opponent finding thread started\n");
+  Logger logger(L"Find Duel");
+  logger(L"Opponent finding thread started");
   while(true){
-    find_opponent();
+    find_opponent(logger);
     Sleep(100);
   }
 }
@@ -546,55 +584,56 @@ void set_console_font(const wchar_t* font)
 
 int main()
 {
-  //std::wstring_convert<std::codecvt_utf8<wchar_t>> converter_;
-
   char* z_err_msg;
+  HANDLE console_output = GetStdHandle(STD_OUTPUT_HANDLE);
+  HANDLE logger_mutex = CreateMutex(NULL, FALSE, NULL);
+
   setlocale(LC_ALL, "ru_RU.utf8");
-  //SetConsoleCP(65001);
+  SetConsoleCP(65001);
   set_console_font(L"Courier New");
 
-  wstring s(L"абв");
-  char str_raw[30];
-  string st = converter.to_bytes(s);
-  wstring wstr = converter.from_bytes(st);
-  //wcout << L"1.5" << s << ' ' << wstr << L'\n';
-  copy(st.begin(), st.end() + 1, str_raw);
-  //wcout << '\"' << st << '\"' << ' ' << st.size() << '\n';
-  //log("1: %s, %u\n", str_raw, strlen(str_raw));
-  for(int i = 0; i < strlen(str_raw) + 1; i++)
-    log("%u ", (unsigned int) (unsigned char) str_raw[i]);
-  log("\n");
-  log("2: %ls\n", wstr.c_str());
+  Logger log_base("CardBluffServer.log", console_output, logger_mutex);
+  Logger logger(L"Main");
+  Logger sqlite_logger(L"SQLite");
+
+  logger(L"CardBluff Server started!");
 
   if(!sqlite3_threadsafe()){
-    log("Current SQLite version is not thread safe.\n");
+    sqlite_logger(L"Current SQLite version is not thread safe.");
     return 0;
   };
 
   sqlite3* db;
-  if(sqlite3_open("db.sl3", &db)){
-    log("Error opening database.\n");
+  sqlite_logger << L"Opening database '" << db_filename << L"'..." << Logger::endline;
+  if(sqlite3_open(db_filename, &db)){
+    sqlite_logger << L"Error opening database '" << db_filename << L"'" << Logger::endline;
     sqlite3_close(db);
     return 0;
   };
+  sqlite_logger << L"Database file '" << db_filename << L"' opened" << Logger::endline;
 
+  sqlite_logger(L"Checking client table existence and creating it if not exists...");
   if(sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS clients(id INTEGER PRIMARY KEY,nickname TEXT UNIQUE,password TEXT,rating INTEGER);", NULL, nullptr, &z_err_msg)){
-    log("Error creating table or checking its existence.\nSQLite error: %s\n", z_err_msg);
+    sqlite_logger << L"Error: " << z_err_msg << Logger::endline;
     sqlite3_free(z_err_msg);
     sqlite3_close(db);
     return 0;
   }
+  sqlite_logger(L"Client table exists");
 
   SOCKET main_socket;
   DWORD thread;
 
   WSADATA wsaData;
 
+  logger(L"WSA Startup...");
   int ret = WSAStartup(0x101, &wsaData); // use highest version of winsock avalible
 
   if(ret != 0){
+    logger << "WSA Startup error: " << ret << Logger::endline;
     return 0;
   }
+  logger(L"WSA Startup OK");
 
   sockaddr_in server;
 
@@ -602,50 +641,66 @@ int main()
   server.sin_addr.s_addr = INADDR_ANY;
   server.sin_port = htons(PORT);
 
+  logger(L"Creating main socket...");
   main_socket = socket(AF_INET, SOCK_STREAM, 0);
 
   if(main_socket == INVALID_SOCKET){
+    logger(L"Error creating socket!");
     return 0;
   }
+  logger(L"Main socket created");
 
+  logger << L"Binding socket to port " << PORT << L"..." << Logger::endline;
   if(bind(main_socket, (sockaddr*)&server, sizeof(server)) !=0){
+    logger(L"Error binding socket!");
     return 0;
   }
 
+  logger(L"Starting listening on socket...");
   if(listen(main_socket, MAX_CLIENTS) != 0){
+    logger(L"Error starting listening on socket!");
     return 0;
   }
+  logger(L"Listening started");
 
   SOCKET client_socket;
 
   sockaddr_in from;
   int fromlen = sizeof(from);
 
-  stdout_mutex = CreateMutex(NULL, FALSE, NULL);
-
+  logger(L"Creating duel finding thread...");
   CreateThread(NULL, 0, find_duel_thread, (LPVOID) 0, 0, &thread);
 
+  logger(L"Waiting for clients...");
+  long long client_num = 0;
   while(true){
-    log("Waiting for client\n");
     client_socket = accept(main_socket, (struct sockaddr*) &from, &fromlen);
-    log("Client connected\n");
+    logger << "New client #" << client_num << " connected" << Logger::endline;
 
+    logger << "Client #" << client_num << ": Putting socket into non-blocking mode..." << Logger::endline;
     unsigned long non_blocking = 1;
     if (ioctlsocket(client_socket, FIONBIO, &non_blocking) == SOCKET_ERROR) {
-      log("Failed to put socket into non-blocking mode\n");
+      logger << "Client #" << client_num << ": Error: failed to put socket into non-blocking mode" << Logger::endline;
+      logger << "Client #" << client_num << ": Closing socket..." << Logger::endline;
       closesocket(client_socket);
       continue;
     }
+    logger << "Client #" << client_num << ": Socket is non-blocking now" << Logger::endline;
 
     Client* client = new Client(client_socket);
     clients.insert(client);
 
+    logger << "Client #" << client_num << ": Staring threads..." << Logger::endline;
     client->set_send_thread(CreateThread(NULL, 0, server_to_client, (LPVOID) client, 0, &thread));
     client->set_receive_thread(CreateThread(NULL, 0, client_to_server, (LPVOID) client, 0, &thread));
+    logger << "Client #" << client_num << ": Threads started" << Logger::endline;
+
+    client_num++;
   }
 
   closesocket(main_socket);
   WSACleanup();
 
+  CloseHandle(logger_mutex);
   return 0;
 }

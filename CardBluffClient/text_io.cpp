@@ -448,7 +448,7 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
   return ret;
 }
 
-int output_win_addwstr_colored(wchar_t* str){
+int output_win_addwstr_colored(const wchar_t* str){
 
   if(wcsncmp(str, SERVER_PREFIX, wcslen(SERVER_PREFIX)) == 0){
     return use_win(output_win, [&](WINDOW* w){
@@ -465,12 +465,18 @@ int output_win_addwstr_colored(wchar_t* str){
     unsigned int card_number, suit;
     wchar_t value;
     wchar_t *tok, *st;
-    if((tok = wcstok_r(str, L":", &st)) == nullptr){ //prefix
+
+    wchar_t* str_buf = new wchar_t[wcslen(str) + 1];
+    wcscpy(str_buf, str);
+
+    if((tok = wcstok_r(str_buf, L":", &st)) == nullptr){ //prefix
+      delete[] str_buf;
       return ERR;
     }
     tok = wcstok_r(nullptr, L":", &st); //card number
     if(tok == nullptr ||
        swscanf(tok, L"%u", &card_number) != 1){
+      delete[] str_buf;
       return ERR;
     }
     for(unsigned int i = 0; i < card_number; i++){
@@ -479,17 +485,21 @@ int output_win_addwstr_colored(wchar_t* str){
       else
         tok = st;
       if(tok == nullptr ||
-         swscanf(tok, L"%u,%lc", &suit, &value) != 2)
+         swscanf(tok, L"%u,%lc", &suit, &value) != 2){
         return ERR;
+        delete[] str_buf;
+      }
       cards.push_back(std::make_pair(suit, value));
     }
-    tok += 3;
+
+    delete[] str_buf;
+    const wchar_t* pref_str = str + (tok - str_buf);
 
     return use_win(output_win, [&](WINDOW* w){
               if(wattron(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
               if(waddwstr(w, SERVER_PREFIX L" ") == ERR) return ERR;
               if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
-              if(win_print_with_highlight(w, tok) == ERR) return ERR;
+              if(win_print_with_highlight(w, pref_str) == ERR) return ERR;
               for(auto card: cards){
                 if(waddnwstr(w, &card.second, 1) == ERR) return ERR;
                 switch(card.first){
@@ -520,7 +530,7 @@ int output_win_addwstr_colored(wchar_t* str){
                 if(&card != &cards.back()) if(waddwstr(w, L", ") == ERR) return ERR;
               }
               if(waddnwstr(w, L"\n", 1) == ERR) return ERR;
-              return wrefresh(w);
+              return output_win_refresh(w);
             });
   }
   if(wcsncmp(str, ERROR_PREFIX, wcslen(ERROR_PREFIX)) == 0){
@@ -529,14 +539,14 @@ int output_win_addwstr_colored(wchar_t* str){
               if(waddwstr(w, str) == ERR) return ERR;
               if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
-              return wrefresh(w);
+              return output_win_refresh(w);
             });
   }
   else if(wcsncmp(str, USER_PREFIX, wcslen(USER_PREFIX)) == 0){
     return use_win(output_win, [&](WINDOW* w){
               if(win_print_with_highlight(w, str + wcslen(USER_PREFIX)) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
-              return wrefresh(w);
+              return output_win_refresh(w);
             });
   }
   else{
@@ -544,7 +554,7 @@ int output_win_addwstr_colored(wchar_t* str){
               if(waddwstr(w, L"> ") == ERR) return ERR;
               if(waddwstr(w, str) == ERR) return ERR;
               if(waddwstr(w, L"\n") == ERR) return ERR;
-              return wrefresh(w);
+              return output_win_refresh(w);
             });
   }
 }

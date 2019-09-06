@@ -1,6 +1,6 @@
 #include "combinations.h"
 
-const int COMBINATION_SIZE[] =
+const unsigned int COMBINATION_SIZE[] =
 {
     1,  // NOTHING
 	2,  // HIGH_CARD
@@ -103,7 +103,6 @@ Hand::Hand(const vector<CARD_TYPE>& v)
         suit_rank_b[i].resize(RANKS);
     for (int i = 0; i < ((int)((v).size())); ++i)
     {
-        int a;
         int rank = v[i] >> 2;
         ++rank_number[rank];
         int suit = v[i] & 3;
@@ -203,6 +202,7 @@ bool Hand::check_straight_flush(const pair<int, int>& rank_suit) const
             return true;
         }
     }
+    assert(false);
 }
 vector<int> Hand::find_every_four_of_a_kind() const
 {

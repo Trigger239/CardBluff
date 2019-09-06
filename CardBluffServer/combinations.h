@@ -57,7 +57,7 @@ typedef enum
 	STRAIGHT_FLUSH
 } combination_t;
 
-extern const int COMBINATION_SIZE[COMBINATIONS];
+extern const unsigned int COMBINATION_SIZE[COMBINATIONS];
 extern const vector<bool> HAS_SUIT;
 extern const vector<uint8_t> HOW_MANY_RANKS;
 extern const unordered_map<wchar_t, rank_t> WCHAR_TO_RANK;

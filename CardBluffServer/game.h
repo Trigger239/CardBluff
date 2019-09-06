@@ -14,7 +14,8 @@
 
 #include "client.h"
 #include "combinations.h"
-
+#include "database.h"
+#include "util/logger.h"
 
 using namespace std;
 
@@ -57,8 +58,7 @@ class Game{
 public:
 
   Game(Client* first_player,
-       Client* second_player,
-       CurrentMove current_move);
+       Client* second_player);
   ~Game();
 
   void push_command(Client* client, const wstring& command);
@@ -78,13 +78,18 @@ public:
   void finish(const RoundResult& res);
 
   HANDLE get_thread_handle_ready_event();
+  Logger& get_logger();
 
   void set_thread(HANDLE _thread);
+  void set_db(sqlite3* _db);
+
   HANDLE get_thread();
   Client* get_first_player() const;
   Client* get_second_player() const;
 
 private:
+  sqlite3* db;
+
   HANDLE thread_handle_ready_event;
   HANDLE thread;
   HANDLE command_queue_mutex;
@@ -114,9 +119,11 @@ private:
   CurrentMove first_move;
   mt19937 gnr;
   vector<int> current_combination;
+  Logger logger;
 
   vector<uint8_t> generate_shuffled_array_of_cards();
   void generate_cards();
+  wstring cards_to_string(vector<CARD_TYPE> &cards);
 
   void send_next_move_prompts();
   void send_card_messages_to_owners();
