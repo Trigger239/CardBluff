@@ -27,6 +27,7 @@
 
 const char db_filename[] = "db.sl3";
 
+#ifdef SET_CONSOLE_FONT
 typedef struct _CONSOLE_FONT_INFOEX
 {
     ULONG cbSize;
@@ -46,6 +47,8 @@ BOOL WINAPI GetCurrentConsoleFontEx(HANDLE hConsoleOutput, BOOL bMaximumWindow, 
 lpConsoleCurrentFontEx);
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 using namespace std;
@@ -563,26 +566,31 @@ DWORD WINAPI find_duel_thread(LPVOID lpParam){
   }
 }
 
-void set_console_font(const wchar_t* font)
+bool set_console_font(const wchar_t* font)
 {
-    HANDLE StdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    CONSOLE_FONT_INFOEX info;
-    memset(&info, 0, sizeof(CONSOLE_FONT_INFOEX));
-    info.cbSize = sizeof(CONSOLE_FONT_INFOEX);              // prevents err=87 below
-    if (GetCurrentConsoleFontEx(StdOut, FALSE, &info))
+#ifdef SET_CONSOLE_FONT
+  HANDLE StdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+  CONSOLE_FONT_INFOEX info;
+  memset(&info, 0, sizeof(CONSOLE_FONT_INFOEX));
+  info.cbSize = sizeof(CONSOLE_FONT_INFOEX);              // prevents err=87 below
+  if (GetCurrentConsoleFontEx(StdOut, FALSE, &info))
+  {
+    info.FontFamily   = FF_DONTCARE;
+    info.dwFontSize.X = 0;  // leave X as zero
+    info.dwFontSize.Y = 14;
+    info.FontWeight   = 400;
+    wcscpy(info.FaceName, font);
+    if (SetCurrentConsoleFontEx(StdOut, FALSE, &info))
     {
-        info.FontFamily   = FF_DONTCARE;
-        info.dwFontSize.X = 0;  // leave X as zero
-        info.dwFontSize.Y = 14;
-        info.FontWeight   = 400;
-        wcscpy(info.FaceName, font);
-        if (SetCurrentConsoleFontEx(StdOut, FALSE, &info))
-        {
-        }
+      return true;
     }
+    return false;
+  }
+#endif
+  return false;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
   char* z_err_msg;
   HANDLE console_output = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -590,11 +598,15 @@ int main()
 
   setlocale(LC_ALL, "ru_RU.utf8");
   SetConsoleCP(65001);
-  set_console_font(L"Courier New");
+
+  bool font_ok = set_console_font(L"Lucida Console");
 
   Logger log_base("CardBluffServer.log", console_output, logger_mutex);
   Logger logger(L"Main");
   Logger sqlite_logger(L"SQLite");
+
+  if(!font_ok)
+    logger(L"Changing console font failed, you need to set it manually!");
 
   logger(L"CardBluff Server started!");
 

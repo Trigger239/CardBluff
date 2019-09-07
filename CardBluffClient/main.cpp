@@ -30,7 +30,7 @@ using namespace std;
 #define PORT 2390
 
 #define NICKNAME_SIZE_MIN 3
-#define NICKNAME_CHARS_NOT_ALLOWED L":%"
+#define NICKNAME_CHARS_NOT_ALLOWED L":%\\"
 #define PASSWORD_SIZE_MIN 4
 
 typedef enum{
