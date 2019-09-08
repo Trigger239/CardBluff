@@ -27,6 +27,9 @@
 
 const char db_filename[] = "db.sl3";
 
+#if defined(__GNUC__) && (__GNUC___ < 6 || (__GNUC__ == 6 && __GNUC_MINOR__ <= 3))
+// this is for gcc <=6.3
+
 #ifdef SET_CONSOLE_FONT
 typedef struct _CONSOLE_FONT_INFOEX
 {
@@ -49,7 +52,9 @@ lpConsoleCurrentFontEx);
 }
 #endif
 
-#endif
+#endif //SET_CONSOLE_FONT
+
+#endif //gcc <= 6.3
 
 using namespace std;
 

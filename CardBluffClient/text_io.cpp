@@ -39,6 +39,9 @@ wchar_t *wcstok_r(wchar_t *str, const wchar_t *delim, wchar_t **nextp)
     return ret;
 }
 
+#if defined(__GNUC__) && (__GNUC___ < 6 || (__GNUC__ == 6 && __GNUC_MINOR__ <= 3))
+// this is for gcc <= 6.3
+
 typedef struct _CONSOLE_FONT_INFOEX
 {
     ULONG cbSize;
@@ -59,6 +62,8 @@ lpConsoleCurrentFontEx);
 #ifdef __cplusplus
 }
 #endif
+
+#endif //gcc <= 6.3
 
 #ifdef USE_MUTEX
 HANDLE curses_mutex;
