@@ -46,8 +46,8 @@
 			<Add option="-fexceptions" />
 			<Add option="-U__STRICT_ANSI__" />
 			<Add option="-Wformat" />
-			<Add option="-execution-charset=utf8" />
-			<Add option="-finput-charset=cp1251" />
+			<Add option="-execution-charset=utf-8" />
+			<Add option="-finput-charset=utf-8" />
 			<Add option="-ffunction-sections" />
 			<Add option="-fdata-sections" />
 			<Add option="-Wl,--gc-sections" />

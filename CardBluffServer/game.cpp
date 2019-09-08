@@ -300,17 +300,17 @@ void Game::make_move(Command cmd){
         logger(L"'" + client->get_nickname() + L"' revealed");
         push_client_string_to_client(cws, get_currently_not_moving_player(), client);
         if (Hand::is_combination_nothing(current_combination))
-            push_client_string_to_client(client->get_nickname_with_color() + L", запрещено вскрываться на первом ходу.", client); // TODO: ENGLISH
+            push_client_string_to_client(client->get_nickname_with_color() + L", Р·Р°РїСЂРµС‰РµРЅРѕ РІСЃРєСЂС‹РІР°С‚СЊСЃСЏ РЅР° РїРµСЂРІРѕРј С…РѕРґСѓ.", client); // TODO: ENGLISH
         else if (union_of_cards.check_combination(current_combination))
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_client_string_to_both(client->get_nickname_with_color() + L", здесь есть эта комбинация."); // TODO: ENGLISH
+            push_client_string_to_both(client->get_nickname_with_color() + L", Р·РґРµСЃСЊ РµСЃС‚СЊ СЌС‚Р° РєРѕРјР±РёРЅР°С†РёСЏ."); // TODO: ENGLISH
             player_loses_round(current_move);
         }
         else
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_client_string_to_both(client->get_nickname_with_color() + L", здесь нет этой комбинации."); // TODO: ENGLISH
+            push_client_string_to_both(client->get_nickname_with_color() + L", Р·РґРµСЃСЊ РЅРµС‚ СЌС‚РѕР№ РєРѕРјР±РёРЅР°С†РёРё."); // TODO: ENGLISH
             player_loses_round(negation(current_move));
         }
     }
@@ -320,23 +320,23 @@ void Game::make_move(Command cmd){
         push_client_string_to_client(cws, get_currently_not_moving_player(), client);
         //push_client_string_to_client(cws, client, get_currently_not_moving_player());
         if (Hand::is_combination_nothing(current_combination))
-            push_client_string_to_client(client->get_nickname_with_color() + L", запрещено блокировать на первом ходу.", client); // TODO: ENGLISH
+            push_client_string_to_client(client->get_nickname_with_color() + L", Р·Р°РїСЂРµС‰РµРЅРѕ Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РЅР° РїРµСЂРІРѕРј С…РѕРґСѓ.", client); // TODO: ENGLISH
         else if (union_of_cards.is_best_combination(current_combination))
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", это лучшая комбинация."); // TODO: ENGLISH
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", СЌС‚Рѕ Р»СѓС‡С€Р°СЏ РєРѕРјР±РёРЅР°С†РёСЏ."); // TODO: ENGLISH
             tie_in_round();
         }
         else if (union_of_cards.check_combination(current_combination))
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", этой комбинации здесь нет."); // TODO: ENGLISH
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", СЌС‚РѕР№ РєРѕРјР±РёРЅР°С†РёРё Р·РґРµСЃСЊ РЅРµС‚."); // TODO: ENGLISH
             player_loses_round(current_move);
         }
         else
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", это не лучшая комбинация."); // TODO: ENGLISH
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", СЌС‚Рѕ РЅРµ Р»СѓС‡С€Р°СЏ РєРѕРјР±РёРЅР°С†РёСЏ."); // TODO: ENGLISH
                                                                                                                     // TODO: Write the best combination
             player_loses_round(current_move);
         }
@@ -364,7 +364,7 @@ void Game::make_move(Command cmd){
             else
             {
                 logger(L"New combination is not better then current!");
-                push_client_string_to_client(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", текущая комбинация не хуже введённой вами.", client); // TODO: ENGLISH
+                push_client_string_to_client(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", С‚РµРєСѓС‰Р°СЏ РєРѕРјР±РёРЅР°С†РёСЏ РЅРµ С…СѓР¶Рµ РІРІРµРґС‘РЅРЅРѕР№ РІР°РјРё.", client); // TODO: ENGLISH
             }
         }
         else
