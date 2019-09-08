@@ -282,7 +282,7 @@ void Game::make_move(Command cmd){
         push_client_string_to_client(client->get_nickname_with_color() + L", you have " +
                                      tr_str + L" second" + (tr > 10 ? L"s" : L"") + L" to move.", client);
       else
-        push_client_string_to_client(get_currently_not_moving_player()->get_nickname_with_color() + L" has " +
+        push_client_string_to_client(get_currently_moving_player()->get_nickname_with_color() + L" has " +
                                      tr_str + L" second" + (tr > 10 ? L"s" : L"") + L" to move.", client);
       return;
   }
@@ -364,12 +364,12 @@ void Game::make_move(Command cmd){
             else
             {
                 logger(L"New combination is not better then current!");
-                push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", текущая комбинация не хуже введённой вами."); // TODO: ENGLISH
+                push_client_string_to_client(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", текущая комбинация не хуже введённой вами.", client); // TODO: ENGLISH
             }
         }
         else
         {
-            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", " + transcript + L"."); // TODO: ENGLISH
+            push_client_string_to_client(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", " + escape_special_chars(transcript) + L".", client); // TODO: ENGLISH
         }
     }
     else
@@ -458,7 +458,7 @@ void Game::send_next_move_prompts(){
 wstring Game::cards_to_string(vector<CARD_TYPE> &cards){
   wchar_t str[BUFFER_SIZE];
   wchar_t* ptr = str;
-  swprintf(ptr, CARDS_PREFIX L"%01u", (unsigned) cards.size());
+  swprintf(ptr, CARDS_PREFIX L"%u", (unsigned) cards.size());
   ptr += 7;
   for(int i = 0; i < ((int)(cards.size())); i++){
     CARD_TYPE value = cards[i] / 4;

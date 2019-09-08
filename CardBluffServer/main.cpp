@@ -515,7 +515,7 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
         if(wcsncmp(receive_buffer.c_str(), L"/", 1) != 0){
           client->push_string(SERVER_PREFIX L" You should find an opponent to use chat.");
         }
-        else if(wcscmp(receive_buffer.c_str(), L"/findduel") == 0){
+        else if(wcscmp(receive_buffer.c_str(), L"/findduel") == 0 || wcscmp(receive_buffer.c_str(), L"/fd") == 0){
           logger(L"Finding opponent...");
           client->set_finding_duel(true);
           client->push_string(SERVER_PREFIX L" Finding an opponent for you...");

@@ -60,3 +60,15 @@ std::wstring remove_space_characters(const std::wstring& str)
             ans.push_back(*it);
     return ans;
 }
+
+std::wstring escape_special_chars(const std::wstring& str){
+  const std::wstring special_chars = SPECIAL_CHARS;
+  std::wstring res;
+  for(wchar_t c: str){
+    if(special_chars.find(c) != std::wstring::npos){
+      res += L"\\";
+    }
+    res += c;
+  }
+  return res;
+}
