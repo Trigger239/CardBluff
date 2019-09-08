@@ -492,6 +492,8 @@ int output_win_addwstr_colored(const wchar_t* str){
       cards.push_back(std::make_pair(suit, value));
     }
 
+    tok += 3;
+
     delete[] str_buf;
     const wchar_t* pref_str = str + (tok - str_buf);
 
