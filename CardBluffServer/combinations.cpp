@@ -28,6 +28,34 @@ const vector<bool> HAS_SUIT =
 	true    // STRAIGHT_FLUSH
 };
 
+const vector<bool> IS_STRAIGHT_TYPE =
+{
+    false,  // NOTHING
+	false,  // HIGH_CARD
+	false,  // PAIR
+	false,  // TWO_PAIRS
+	false,  // THREE
+	true,  // STRAIGHT
+	false,   // FLUSH
+	false,  // FULL_HOUSE
+	false,  // FOUR
+	true    // STRAIGHT_FLUSH
+};
+
+const vector<bool> IS_FLUSH_TYPE =
+{
+    false,  // NOTHING
+	false,  // HIGH_CARD
+	false,  // PAIR
+	false,  // TWO_PAIRS
+	false,  // THREE
+	false,  // STRAIGHT
+	true,   // FLUSH
+	false,  // FULL_HOUSE
+	false,  // FOUR
+	false    // STRAIGHT_FLUSH
+};
+
 
 extern const vector<uint8_t> HOW_MANY_RANKS =
 {
@@ -359,7 +387,7 @@ pair<int, int> Hand::find_best_two_pairs() const
 }
 bool Hand::check_two_pairs(const pair<int, int>& rank1_rank2) const
 {
-    return rank_number[rank1_rank2.first] && rank_number[rank1_rank2.second];
+    return rank_number[rank1_rank2.first] >= 2 && rank_number[rank1_rank2.second] >= 2;
 }
 vector<int> Hand::find_every_pair() const
 {
@@ -524,6 +552,9 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
     static const wstring MISSING_SUIT = L"missing suit identifier";
     static const wstring INCORRECT_SUIT = L"incorrect suit identifier: ";
     static const wstring EXCESS_INFORMATION = L"excess information: ";
+    static const wstring COINCIDING_RANKS = L"ranks of pair both equal: ";
+    static const wstring LITTLE_STRAIGHT_RANK = L"rank should be at least 5, but it equals: ";
+    static const wstring LITTLE_FLUSH_RANK = L"rank should be at least 7, but it equals: ";
 
     int number_of_symbol = 0;
     int command_length = ((int)((command).size()));
@@ -564,6 +595,22 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
 
     if (command_length > 1 + number_of_ranks + number_of_suits)
         return INCORRECT_SUIT + L'\"' + command.substr(1 + number_of_ranks + number_of_suits, command_length - (1 + number_of_ranks + number_of_suits)) + L'\"';
+
+    if (IS_STRAIGHT_TYPE[combination_type])
+    {
+        if (combination[1] < FIVE)
+            return LITTLE_STRAIGHT_RANK + L'\'' + command[1] + L'\'';
+    }
+    else if (IS_FLUSH_TYPE[combination_type])
+    {
+        if (combination[1] < SEVEN)
+            return LITTLE_FLUSH_RANK + L'\'' + command[1] + L'\'';
+    }
+    else if (combination_type == TWO_PAIRS)
+    {
+        if (combination[1] == combination[2])
+            return COINCIDING_RANKS + L'\'' + command[1] + L'\'';
+    }
 
     if (combination_type == TWO_PAIRS)
         sort(combination.begin() + 1, combination.begin() + 3);
