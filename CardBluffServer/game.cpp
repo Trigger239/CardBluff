@@ -311,7 +311,7 @@ void Game::make_move(Command cmd){
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
             push_client_string_to_both(client->get_nickname_with_color() + L", здесь нет этой комбинации."); // TODO: ENGLISH
-            player_loses_round(negation(current_move));
+            player_loses_round(negate_CurrentMove(current_move));
         }
     }
     else if (lcws == L"/b")
@@ -570,7 +570,7 @@ HANDLE Game::get_thread(){
   return thread;
 }
 
-CurrentMove negation(const CurrentMove& my_move)
+CurrentMove negate_CurrentMove(const CurrentMove& my_move)
 {
   if(my_move == FIRST_PLAYER_MOVE)
     return SECOND_PLAYER_MOVE;
@@ -582,11 +582,11 @@ CurrentMove negation(const CurrentMove& my_move)
 }
 
 void Game::alternate_current_move() {
-  current_move = negation(current_move);
+  current_move = negate_CurrentMove(current_move);
 }
 
 void Game::alternate_first_move(){
-  first_move = negation(first_move);
+  first_move = negate_CurrentMove(first_move);
   current_move = first_move;
 }
 

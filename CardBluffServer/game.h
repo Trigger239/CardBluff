@@ -52,7 +52,7 @@ struct Command{
 };
 
 #define FinishedGame(x) ((x == FIRST_PLAYER_LOST_GAME) || (x == SECOND_PLAYER_LOST_GAME) || (x == TIE_IN_GAME))
-CurrentMove negation(const CurrentMove&);
+CurrentMove negate_CurrentMove(const CurrentMove&);
 
 class Game{
 public:
