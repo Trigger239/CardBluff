@@ -645,6 +645,7 @@ int process_resize(void){
 
   rows = nlines;
   cols = ncols;
+  max_input_length = cols - 2;
 
   //resizing output window (pad) and scrolling in to the end
   if(use_win(output_win, [&](WINDOW* w){
