@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cwchar>
 #include <vector>
+#include <cwctype>
 
 #include "text_io.h"
 
@@ -146,6 +147,7 @@ bool console_init(void){
   }
 
   getmaxyx(stdscr, rows, cols);
+
   max_input_length = cols - 2;
 
   output_win_py = 0;
@@ -237,13 +239,14 @@ int win_print_with_highlight(WINDOW* win, const wchar_t* str, int default_color 
   return OK;
 }
 
+std::wstring input_buffer;
+unsigned int cursor = 0;
+
 bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
                   std::wstring &str, bool hide_input,
                   bool* input_ready){
   //*_terminate = false;
 
-  static std::wstring input_buffer;
-  static unsigned int cursor = 0;
   bool string_ready = false;
 
   bool need_update = true;
@@ -367,7 +370,7 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
       case CTL_END:
       case CTL_PAD1:
         use_win(output_win, [&](WINDOW* w){
-                  output_win_py = getcury(w) - rows + INPUT_WINDOW_ROWS + 1;
+                  output_win_py = max(getcury(w) - rows + INPUT_WINDOW_ROWS + 1, 0);
                   return prefresh(w, output_win_py, 0, 0, 0, rows - INPUT_WINDOW_ROWS - 1, cols - 1);
                 });
         break;
@@ -563,5 +566,113 @@ int output_win_addwstr_colored(const wchar_t* str){
               if(waddwstr(w, L"\n") == ERR) return ERR;
               return output_win_refresh(w);
             });
+  }
+}
+
+int win_resize_and_copy_data(WINDOW* win, int nlines, int ncols){
+  std::vector<std::vector<cchar_t>> win_data;
+  cchar_t c;
+  int nlines_old, ncols_old;
+  getmaxyx(win, nlines_old, ncols_old);
+
+  int lines = 0;
+
+  for(int i = 0; i < nlines_old; i++){
+    int row_len = 0;
+    vector<cchar_t> str;
+
+    for(int j = 0; j < ncols_old; j++){
+      if(mvwin_wch(win, i, j, &c) == ERR)
+        return ERR;
+      str.push_back(c);
+      //last no-space char
+      if(!iswspace((wchar_t) (c & A_CHARTEXT)))
+         row_len = j + 1;
+    }
+
+    str.resize(row_len);
+    win_data.push_back(str);
+    //last non-empty row
+    if(str.size() > 0)
+      lines = i + 1;
+  }
+  win_data.resize(lines);
+
+  if(wresize(win, nlines, ncols) == ERR)
+    return ERR;
+  if(wclear(win) == ERR)
+    return ERR;
+  if(wmove(win, 0, 0) == ERR)
+    return ERR;
+
+  for(vector<cchar_t> str: win_data){
+    for(cchar_t c: str){
+      if(wadd_wch(win, &c) == ERR)
+        return ERR;
+    }
+
+    c = L'\n';
+    if(wadd_wch(win, &c) == ERR)
+      return ERR;
+  }
+
+  return OK;
+}
+
+int process_resize(void){
+  int nlines, ncols;
+
+  getmaxyx(stdscr, nlines, ncols);
+
+  bool need_resize = false;
+
+  //increasing size if it is too small
+  if(nlines < MIN_ROWS){
+    nlines = MIN_ROWS;
+    need_resize = true;
+  }
+  if(ncols < MIN_COLS){
+    ncols = MIN_COLS;
+    need_resize = true;
+  }
+
+  if(need_resize){
+    if(resize_term(nlines, ncols) == ERR)
+      return ERR;
+    if(resize_term(0, 0) == ERR)
+      return ERR;
+  }
+
+  rows = nlines;
+  cols = ncols;
+
+  //resizing output window (pad) and scrolling in to the end
+  if(use_win(output_win, [&](WINDOW* w){
+      if(win_resize_and_copy_data(w, OUTPUT_WINDOW_ROWS, ncols) == ERR) return ERR;
+      output_win_py = max(getcury(w) - rows + INPUT_WINDOW_ROWS + 1, 0);
+      return prefresh(w, output_win_py, 0, 0, 0, rows - INPUT_WINDOW_ROWS - 1, cols - 1);
+    }) == ERR) return ERR;
+
+  //resizing input window
+  if(use_win(input_win, [&](WINDOW* w){
+      if(wresize(w, INPUT_WINDOW_ROWS, cols) == ERR) return ERR;
+      if(mvwin(w, rows - INPUT_WINDOW_ROWS, 0) == ERR) return ERR;
+      if(wclear(w) == ERR) return ERR;
+      if(box(w, 0, 0) == ERR) return ERR;
+      return wrefresh(w);
+    }) == ERR) return ERR;
+
+  //and resetting input vars
+  input_buffer.clear();
+  cursor = 0;
+
+  return OK;
+}
+
+void check_and_process_resize(void){
+  if(is_termresized()){
+    resize_term(0, 0);
+    process_resize();
+    refresh();
   }
 }

@@ -106,6 +106,7 @@ int main(void){
     output_win_addwstr(L"Press any key to exit.\n");
     flushinp();
     while(getch() == ERR){
+      check_and_process_resize();
       Sleep(10);
     }
     s_cl("", 0);
@@ -117,6 +118,7 @@ int main(void){
     output_win_addwstr(L"Press any key to exit.\n");
     flushinp();
     while(getch() == ERR){
+      check_and_process_resize();
       Sleep(10);
     }
     s_cl("", 0);
@@ -128,6 +130,7 @@ int main(void){
     output_win_addwstr(L"Press any key to exit.\n");
     flushinp();
     while(getch() == ERR){
+      check_and_process_resize();
       Sleep(10);
     }
     s_cl("", 0);
@@ -456,6 +459,7 @@ int main(void){
       }
     }
 
+    check_and_process_resize();
   }
   s_cl("", 0);
 

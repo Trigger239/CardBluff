@@ -40,6 +40,9 @@ typedef enum
 #define INPUT_WINDOW_ROWS 3
 #define OUTPUT_WINDOW_ROWS 10000
 
+#define MIN_ROWS (INPUT_WINDOW_ROWS + 7)
+#define MIN_COLS 10
+
 //#define USE_MUTEX
 
 extern WINDOW* input_win;
@@ -55,6 +58,7 @@ bool win_get_wstr(WINDOW* input_win, WINDOW* output_win,
                   bool* input_ready);
 
 int output_win_addwstr_colored(const wchar_t* str);
+void check_and_process_resize(void);
 
 #endif // TEXT_IO_H_INCLUDED
 
