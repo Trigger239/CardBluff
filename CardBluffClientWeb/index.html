@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>CardBluff Web Client</title>
+		<link rel="stylesheet" href="css/main.css">
+		
+		<script src="js/sha256.js"></script>
+		<script src="js/textIO.js"></script>
+		<script src="js/main.js"></script>
+	</head>
+	
+	<body>
+		<div id="server_data">
+			<div class="server_data_wrapper">
+				<table><tbody>
+					<tr>
+						<td>Server address:</td>
+						<td><input type="text" id="server_address" value="localhost"></input></td>
+					</tr>
+					<tr>
+						<td>Port:</td>
+						<td><input type="number" step="1" id="server_port" value="2391"></input></td>
+					</tr>
+				</tbody></table>
+				<input type="button" id="connect_button" value="Connect!"></input>
+			</div>
+		</div>
+		<div class="wrapper">
+			<div class="content">
+				<div id="console_output"></div>
+			</div>
+			
+			<div>
+				<div class="console_input">
+					<input type="text" id="console_input" maxlength="128"></input>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

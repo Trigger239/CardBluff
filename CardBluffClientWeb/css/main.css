@@ -1,0 +1,198 @@
+/* http://meyerweb.com/eric/tools/css/reset/ 2. v2.0 | 20110126
+  License: none (public domain)
+*/
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+ol, ul {
+  list-style: none;
+}
+blockquote, q {
+  quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/*Custom style*/
+
+html, body {
+    height: 100%;
+}
+
+body {
+  font-family: Courier New;
+  font-size: 14pt;
+  background: black;
+  color: white;
+}
+
+.wrapper {
+  display: table;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.content {
+  display: table-row;
+  height: 100%;
+}
+
+.console_output, #console_output {
+  height: 100%;
+  overflow-y: auto;
+  word-break: break-word;
+}
+
+.console_input {
+  border-style: solid;
+  border-color: white;
+  border-width: 2px;
+}
+
+.wrapper, .content, .console_output, .console_input, #console_output {
+  width: 100%;
+}
+
+.console_output, .console_input, #console_output {
+  box-sizing: border-box;
+  padding: 5px;
+}
+
+#console_input, #server_address, #server_port {
+  background: inherit;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+#console_input {
+  border-width: 0px;
+  width: 100%;
+}
+
+#server_data {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  width: 100%;
+  padding-top: 5px;
+  -webkit-transform: translate(0, -120%);
+  -webkit-transition: transform 1000ms;
+  transform: translate(0, -120%);
+  transition: transform 1000ms;
+}
+
+#server_data.shown {
+  -webkit-transform: translate(0, 0);
+  transform: translate(0, 0);
+}
+
+.server_data_wrapper {
+  width: fit-content;
+  margin: auto;
+  border: 2px solid white;
+  border-radius: 5px;
+  padding: 5px;
+  background-color: rgb(0, 0, 0, 0.8);
+}
+
+#server_address, #server_port {
+  border: solid;
+  border-color: white;
+  border-width: 1px;
+}
+
+#connect_button {
+  width: 100%;
+  border: none;
+  margin-top: 5px;
+  padding: 2px;
+  background-color: rgb(200, 200, 0);
+  font-family: inherit;
+  font-size: inherit;
+}
+
+td {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+td + td {
+  padding-left: 3px;
+}
+
+.msg_server_prefix {
+  color: yellow;
+}
+
+.msg_highlighted {
+  color: magenta;
+}
+
+.msg_error {
+  color: red;
+}
+
+.msg_user_input {
+  color: cyan;
+}
+
+/*
+.suit_hearts {
+  color: red;
+}
+
+.suit_diamonds {
+  color: yellow;
+}
+
+.suit_spades {
+  color: green;
+}
+
+.suit_clubs {
+  color: blue;
+}
+*/
+.suit_hearts, .suit_diamonds {
+  color: red;
+}
+
+.suit_spades, .suit_clubs {
+  color: white;
+}
