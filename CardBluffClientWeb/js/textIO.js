@@ -1,5 +1,3 @@
-'use strict'
-
 const MAX_OUTPUT_ROWS = 10000;
 
 const SERVER_PREFIX	= "SERVER:";

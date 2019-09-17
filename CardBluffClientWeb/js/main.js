@@ -1,5 +1,3 @@
-'use strict'
-
 const NICKNAME_SIZE_MIN = 3;
 const NICKNAME_CHARS_NOT_ALLOWED = ":%\\";
 const PASSWORD_SIZE_MIN = 4;
