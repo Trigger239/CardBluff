@@ -128,7 +128,8 @@ body {
   border: 2px solid white;
   border-radius: 5px;
   padding: 5px;
-  background-color: rgb(0, 0, 0, 0.8);
+  background-color: rgb(0, 0, 0);
+  opacity: 0.8;
 }
 
 #server_address, #server_port {
