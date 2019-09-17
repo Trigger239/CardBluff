@@ -313,8 +313,17 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
     if(!skip_processing){
       char* z_err_msg;
+      wstring receive_buffer;
 
-      wstring receive_buffer = converter.from_bytes(receive_buffer_raw);
+      try{
+        receive_buffer = converter.from_bytes(receive_buffer_raw);
+      }
+      catch(range_error e){
+        logger(L"Error converting received data to UTF-8");
+        client_to_server_cleanup(client, db, logger);
+        return 0;
+      }
+
       switch(client->get_state()){
       case WAIT_NICKNAME:
         if(wcsncmp(receive_buffer.c_str(), L"nickname:", 9) == 0){
@@ -358,8 +367,11 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             logger(L"Waiting first register password hash...");
           }
         }
-        else
+        else{
           logger(L"Wrong nickname message received");
+          client_to_server_cleanup(client, db, logger);
+          return 0;
+        }
         break;
 
       case WAIT_PASSWORD_REGISTER_FIRST:
@@ -375,8 +387,11 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
           logger(L"Waiting second register password hash ...");
           client->set_state(WAIT_PASSWORD_REGISTER_SECOND);
         }
-        else
+        else{
           logger(L"Wrong first register password message received");
+          client_to_server_cleanup(client, db, logger);
+          return 0;
+        }
         break;
 
       case WAIT_PASSWORD_REGISTER_SECOND:
@@ -436,8 +451,11 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             return 0;
           }
         }
-        else
+        else{
           logger(L"Wrong second register password message received");
+          client_to_server_cleanup(client, db, logger);
+          return 0;
+        }
         break;
 
       case WAIT_PASSWORD:
@@ -512,8 +530,11 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
             return 0;
           }
         }
-        else
+        else{
           logger(L"Wrong password message received");
+          client_to_server_cleanup(client, db, logger);
+          return 0;
+        }
         break;
 
       case WAIT_ENTER_GAME:
