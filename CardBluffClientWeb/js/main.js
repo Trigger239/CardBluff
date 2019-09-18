@@ -360,6 +360,13 @@ function serverDataHide(){
 }
 
 window.onload = function(){
+	
+	if(!String.prototype.startsWith){
+		String.prototype.startsWith = function(str, n = 0){
+			return this.slice(n, n + str.length) === str;
+		}
+	}
+
 	textIO = new TextIO(document.getElementById("console_input"), 
 						document.getElementById("console_output"), 
 						inputHandler);

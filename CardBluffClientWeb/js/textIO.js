@@ -30,6 +30,12 @@ function TextIO(input, output, inputHandler){
 	this.inputHandler = inputHandler;
 	this.input.textIO = this;
 	this.input.onkeypress = this.inputProcess;
+	
+	if(!String.prototype.startsWith){
+		String.prototype.startsWith = function(str){
+			return this.slice(0, str.length) === str;
+		}
+	}
 };
 	
 TextIO.htmlEscape = function(html){
