@@ -30,12 +30,6 @@ function TextIO(input, output, inputHandler){
 	this.inputHandler = inputHandler;
 	this.input.textIO = this;
 	this.input.onkeypress = this.inputProcess;
-	
-	if(!String.prototype.startsWith){
-		String.prototype.startsWith = function(str){
-			return this.slice(0, str.length) === str;
-		}
-	}
 };
 	
 TextIO.htmlEscape = function(html){
@@ -142,11 +136,11 @@ TextIO.prototype.addLine = function(str, _class){
 TextIO.prototype.addLineColored = function(str){
 	var p = document.createElement("p");
 	
-	if(str.startsWith(SERVER_PREFIX)){
+	if(startsWith(str, SERVER_PREFIX)){
 		p.appendChild(TextIO.getColoredText(SERVER_PREFIX, "msg_server_prefix"));
 		p.innerHTML += TextIO.highlightString(str.substr(SERVER_PREFIX.length));
 	}
-	else if(str.startsWith(CARDS_PREFIX)){
+	else if(startsWith(str, CARDS_PREFIX)){
 		var cards = [];
 		
 		var i = CARDS_PREFIX.length; //prefix
@@ -211,10 +205,10 @@ TextIO.prototype.addLineColored = function(str){
 			}
 		}
 	}
-	else if(str.startsWith(ERROR_PREFIX)){
+	else if(startsWith(str, ERROR_PREFIX)){
 		p.appendChild(TextIO.getColoredText(str, "msg_error"));
 	}
-	else if(str.startsWith(USER_PREFIX)){
+	else if(startsWith(str, USER_PREFIX)){
 		p.innerHTML += TextIO.highlightString(str.substr(USER_PREFIX.length));
 	}
 	else{ //Unknown message type

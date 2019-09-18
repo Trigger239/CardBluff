@@ -220,11 +220,11 @@ function serverMessageHandler(event){
 		var str = utf8ArrayToString(data);
 		var st = state.state;
 		
-		if(str.startsWith("password?"))
+		if(startsWith(str, "password?"))
 			state.PASSWORD_ENTER(str.substr("password?".length));
-		else if(str.startsWith("password_first?"))
+		else if(startsWith(str, "password_first?"))
 			state.PASSWORD_REGISTER_FIRST_ENTER();
-		else if(str.startsWith("password_second?"))
+		else if(startsWith(str, "password_second?"))
 			state.PASSWORD_REGISTER_SECOND_ENTER(str.substr("password_second?".length));
 		else if(str == "auth_ok!")
 			state.AUTHORIZED();
@@ -360,13 +360,6 @@ function serverDataHide(){
 }
 
 window.onload = function(){
-	
-	if(!String.prototype.startsWith){
-		String.prototype.startsWith = function(str, n = 0){
-			return this.slice(n, n + str.length) === str;
-		}
-	}
-
 	textIO = new TextIO(document.getElementById("console_input"), 
 						document.getElementById("console_output"), 
 						inputHandler);
