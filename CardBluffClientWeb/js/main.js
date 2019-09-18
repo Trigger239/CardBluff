@@ -4,11 +4,11 @@ const PASSWORD_SIZE_MIN = 4;
 const FRAME_SIZE = 256;
 const SOCKET_CONNECTION_TIMEOUT = 2000;
 
-let ws;
-let serverAddress = "localhost";
-let serverPort = 2391;
-let consoleOutput;
-let textIO;
+var ws;
+var serverAddress = "localhost";
+var serverPort = 2391;
+var consoleOutput;
+var textIO;
 
 function StateBase(){};
 
@@ -135,7 +135,7 @@ State.prototype.get = function(){
 	return state;
 }
 
-let state;
+var state;
 
 //from https://stackoverflow.com/questions/17191945/conversion-between-utf-8-arraybuffer-and-string
 //(slightly modified)
@@ -180,12 +180,12 @@ function utf8ArrayToString(array) {
 }
 
 function stringToUtf8Array(str, length) {
-	let len = str.length;
-	let i = 0;
-	let array = [];
+	var len = str.length;
+	var i = 0;
+	var array = [];
 	
 	while (i < len) {
-		let c = str.charCodeAt(i++);
+		var c = str.charCodeAt(i++);
 		
 		if(c <= 0x7F){ // 0xxxxxxx
 			array.push(c);
@@ -202,7 +202,7 @@ function stringToUtf8Array(str, length) {
 	}    
 	
 	if(length && array.length < length){
-		let len = array.length;
+		var len = array.length;
 		array.length = length;
 		array.fill(0, len, length);
 	}
@@ -211,14 +211,14 @@ function stringToUtf8Array(str, length) {
 }
 
 function serverMessageHandler(event){
-	let data = event.data; //data should be ArrayBuffer
-	let i = 0;
+	var data = event.data; //data should be ArrayBuffer
+	var i = 0;
 	
 	data = new Uint8Array(data);
 	
 	while(data.length > 0){	
-		let str = utf8ArrayToString(data);
-		let st = state.state;
+		var str = utf8ArrayToString(data);
+		var st = state.state;
 		
 		if(str.startsWith("password?"))
 			state.PASSWORD_ENTER(str.substr("password?".length));
@@ -244,7 +244,7 @@ function validate_nickname(str){
 		return false;		
 	}
 	
-	for(let i = 0; i < NICKNAME_CHARS_NOT_ALLOWED.length; i++){
+	for(var i = 0; i < NICKNAME_CHARS_NOT_ALLOWED.length; i++){
 		if(str.indexOf(NICKNAME_CHARS_NOT_ALLOWED[i]) != -1){
 			textIO.addLineColored(ERROR_PREFIX + " Nickname shouldn't contain these characters: " + NICKNAME_CHARS_NOT_ALLOWED);
 			textIO.addLine("Please try again.");
@@ -270,7 +270,7 @@ function sendStringToServer(str){
 }
 
 function inputHandler(str){
-	let st = state.state;
+	var st = state.state;
 	if(st == StateBase.NICKNAME_ENTER){
 		if(!validate_nickname(str))
 			return;
@@ -304,7 +304,7 @@ function inputHandler(str){
 	}
 }
 
-let connectionCheckTimeout;
+var connectionCheckTimeout;
 
 function socketOpenHandler(){
 	connectionCheckTimeout = setTimeout(socketCheckConnectionHandler, SOCKET_CONNECTION_TIMEOUT);

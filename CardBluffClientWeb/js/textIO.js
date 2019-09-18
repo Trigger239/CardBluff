@@ -44,7 +44,7 @@ TextIO.htmlEscape = function(html){
 }
 
 TextIO.getColoredText = function(str, _class){
-	let span = document.createElement("span");
+	var span = document.createElement("span");
 	span.className = _class;
 	span.innerHTML = TextIO.htmlEscape(str);
 	return span;
@@ -55,13 +55,13 @@ TextIO.getColoredString = function(str, _class){
 }
 
 TextIO.highlightString = function(str){
-	let highlightOn = false;
-	let backslashFound = false;
+	var highlightOn = false;
+	var backslashFound = false;
 	
-	let res = "";
-	let highlightBuffer = "";
+	var res = "";
+	var highlightBuffer = "";
 	
-	for(let i = 0; i < str.length; i++){
+	for(var i = 0; i < str.length; i++){
 		if(backslashFound){
 			if(highlightOn){
 				if(str[i] != "\\" && str[i] != COLOR_ESCAPE){
@@ -126,7 +126,7 @@ TextIO.prototype.outputAppend = function(element){
 }
 
 TextIO.prototype.addLine = function(str, _class){
-	let p = document.createElement("p");
+	var p = document.createElement("p");
 	if(_class != undefined)
 		p.className = _class;
 	p.innerHTML = TextIO.htmlEscape(str);
@@ -134,25 +134,25 @@ TextIO.prototype.addLine = function(str, _class){
 }
 
 TextIO.prototype.addLineColored = function(str){
-	let p = document.createElement("p");
+	var p = document.createElement("p");
 	
 	if(str.startsWith(SERVER_PREFIX)){
 		p.appendChild(TextIO.getColoredText(SERVER_PREFIX, "msg_server_prefix"));
 		p.innerHTML += TextIO.highlightString(str.substr(SERVER_PREFIX.length));
 	}
 	else if(str.startsWith(CARDS_PREFIX)){
-		let cards = [];
+		var cards = [];
 		
-		let i = CARDS_PREFIX.length; //prefix
-		let j = str.indexOf(":", i);
+		var i = CARDS_PREFIX.length; //prefix
+		var j = str.indexOf(":", i);
 		if(j == -1)
 			return false;
-		let card_number = parseInt(str.substr(i, j));
+		var card_number = parseInt(str.substr(i, j));
 		if(isNaN(card_number))
 			return false;
 		i = j + 1;
 		
-		for(let k = 0; k < card_number; k++){
+		for(var k = 0; k < card_number; k++){
 			j = str.indexOf(":", i);
 			
 			if(j == -1){
@@ -162,13 +162,13 @@ TextIO.prototype.addLineColored = function(str){
 					j = str.length;
 			}
 			
-			let comma = str.indexOf(",", i);
+			var comma = str.indexOf(",", i);
 			if(comma == -1 || comma >= j)
 				return false;
-			let suit = parseInt(str.substr(i, comma));
+			var suit = parseInt(str.substr(i, comma));
 			if(isNaN(suit))
 				return false;
-			let value = str[comma + 1];
+			var value = str[comma + 1];
 			cards.push({suit: suit, value: value});
 			
 			i = j + 1;
@@ -179,8 +179,8 @@ TextIO.prototype.addLineColored = function(str){
 		p.appendChild(TextIO.getColoredText(SERVER_PREFIX, "msg_server_prefix"));
 		p.innerHTML += TextIO.highlightString(" " + str);
 		
-		let first = true;
-		for(let card in cards){
+		var first = true;
+		for(var card in cards){
 			p.innerHTML += TextIO.htmlEscape(cards[card].value);
 			
 			switch(cards[card].suit){
@@ -244,7 +244,7 @@ TextIO.prototype.inputFocus = function(){
 
 TextIO.prototype.inputProcess = function(event){
 	if(event.which == 13 || event.keyCode == 13 || event.key == "Enter"){
-		let str = this.value;
+		var str = this.value;
 		
 		//skip empty input
 		if(str.length == 0)
@@ -254,7 +254,7 @@ TextIO.prototype.inputProcess = function(event){
 			this.textIO.addLine("*".repeat(str.length), "msg_user_input");
 		}
 		else{
-			let p = document.createElement("p");
+			var p = document.createElement("p");
 			p.className = "msg_user_input";
 			p.innerHTML = TextIO.highlightString(str);
 			this.textIO.outputAppend(p);
