@@ -203,8 +203,16 @@ function stringToUtf8Array(str, length) {
 	
 	if(length && array.length < length){
 		var len = array.length;
-		array.length = length;
-		array.fill(0, len, length);
+		if(array.fill){
+			array.length = length;
+			array.fill(0, len, length);
+		}
+		else{
+			var j;
+			for(j = len; j < length; j++)
+				array.push(0);
+		}
+			
 	}
 	
 	return new Uint8Array(array);
@@ -233,7 +241,10 @@ function serverMessageHandler(event){
 		else
 			textIO.addLineColored(str);
 			
-		data = data.slice(FRAME_SIZE);
+		if(data.slice)
+			data = data.slice(FRAME_SIZE);
+		else
+			data = data.subarray(FRAME_SIZE, data.length);
 	}
 }
 
@@ -342,7 +353,10 @@ function keyboardHandler(event){
 
 function connect(){
 	state.CONNECTING();
-	ws = new WebSocket("ws://" + serverAddress + ":" + serverPort);
+	if(document.location.protocol === "https:")
+		ws = new WebSocket("wss://" + serverAddress + ":" + serverPort);
+	else
+		ws = new WebSocket("ws://" + serverAddress + ":" + serverPort);
 	
 	ws.binaryType = "arraybuffer";
 	ws.onopen = socketOpenHandler;

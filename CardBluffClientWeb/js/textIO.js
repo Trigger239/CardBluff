@@ -251,7 +251,15 @@ TextIO.prototype.inputProcess = function(event){
 			return false;
 			
 		if(this.type == "password"){
-			this.textIO.addLine("*".repeat(str.length), "msg_user_input");
+			var asterisks = "";
+			if(String.prototype.repeat)
+				asterisks = "*".repeat(str.length);
+			else{
+				var i;
+				for(i = 0; i < str.length; i++)
+					asterisks += "*";
+			}
+			this.textIO.addLine(asterisks, "msg_user_input");
 		}
 		else{
 			var p = document.createElement("p");
