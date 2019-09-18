@@ -10,131 +10,130 @@ let serverPort = 2391;
 let consoleOutput;
 let textIO;
 
-class StateBase{
-	static get NOT_CONNECTED(){return 0;}
-	static get CONNECTION_LOST(){return 1;}
-	static get CONNECTING(){return 2;}
+function StateBase(){};
 
-	static get WAIT_RECONNECT(){return 3;}
+StateBase.NOT_CONNECTED = 0;
+StateBase.CONNECTION_LOST = 1;
+StateBase.CONNECTING = 2;
 
-	static get NICKNAME_ENTER(){return 4;}
-	static get NICKNAME_SENT(){return 5;}
+StateBase.WAIT_RECONNECT = 3;
 
-	static get PASSWORD_REGISTER_FIRST_ENTER(){return 6;}
-	static get PASSWORD_REGISTER_FIRST_SENT(){return 7;}
+StateBase.NICKNAME_ENTER = 4;
+StateBase.NICKNAME_SENT = 5;
 
-	static get PASSWORD_REGISTER_SECOND_ENTER(){return 8;}
-	static get PASSWORD_REGISTER_SECOND_SENT(){return 9;}
+StateBase.PASSWORD_REGISTER_FIRST_ENTER = 6;
+StateBase.PASSWORD_REGISTER_FIRST_SENT = 7;
 
-	static get PASSWORD_ENTER(){return 10;}
-	static get PASSWORD_SENT(){return 11;}
+StateBase.PASSWORD_REGISTER_SECOND_ENTER = 8;
+StateBase.PASSWORD_REGISTER_SECOND_SENT = 9;
 
-	static get AUTHORIZED(){return 13;}
-	static get AUTHORIZATION_FAILED(){return 14;}
+StateBase.PASSWORD_ENTER = 10;
+StateBase.PASSWORD_SENT = 11;
+
+StateBase.AUTHORIZED = 12;
+StateBase.AUTHORIZATION_FAILED = 13;
+
+
+function State(){
+	this.NOT_CONNECTED();
+	//this.state = StateBase.NOT_CONNECTED;
+}
+	
+State.prototype.NOT_CONNECTED = function(){
+	this.state = StateBase.NOT_CONNECTED;
+	textIO.inputModeNormal();
+	textIO.inputDisable();
 }
 
-class State{
-	constructor(){
-		this.NOT_CONNECTED();
-		//this.state = StateBase.NOT_CONNECTED;
-	}
-	
-	NOT_CONNECTED(){
-		this.state = StateBase.NOT_CONNECTED;
-		textIO.inputModeNormal();
-		textIO.inputDisable();
-	}
-	
-	CONNECTING(){
-		this.state = StateBase.CONNECTING;
-		serverDataHide();
-		serverAddress = document.getElementById("server_address").value;
-		serverPort = document.getElementById("server_port").value;
-		textIO.addLine("Connecting to " + serverAddress + ":" + serverPort + "...");
-	}
-	
-	CONNECTION_LOST(){
-		this.state = StateBase.CONNECTION_LOST;
-		textIO.inputModeNormal();
-		textIO.inputDisable();
-	}
-	
-	WAIT_RECONNECT(){
-		this.state = StateBase.WAIT_RECONNECT;
-		textIO.addLine("Press Enter to try to connect again.");
-		textIO.inputModeNormal();
-		textIO.inputDisable();
-		serverDataShow();
-	}
-	
-	NICKNAME_ENTER(){
-		this.state = StateBase.NICKNAME_ENTER;
-		textIO.addLine("Please enter nickname.");
-		textIO.inputModeNormal();
-		textIO.inputEnable();
-		textIO.inputFocus();
-	}
-	
-	NICKNAME_SENT(){
-		this.state = StateBase.NICKNAME_SENT;
-		textIO.inputDisable();
-	}
-	
-	PASSWORD_REGISTER_FIRST_ENTER(){
-		this.state = StateBase.PASSWORD_REGISTER_FIRST_ENTER;
-		textIO.inputModePassword();
-		textIO.inputEnable();
-		textIO.inputFocus();
-	}
-	
-	PASSWORD_REGISTER_FIRST_SENT(){
-		this.state = StateBase.PASSWORD_REGISTER_FIRST_SENT;
-		textIO.inputDisable();
-	}
-	
-	PASSWORD_REGISTER_SECOND_ENTER(salt){
-		this.state = StateBase.PASSWORD_REGISTER_SECOND_ENTER;
-		this.salt = salt;
-		textIO.inputModePassword();
-		textIO.inputEnable();
-		textIO.inputFocus();
-	}
-	
-	PASSWORD_REGISTER_SECOND_SENT(){
-		this.state = StateBase.PASSWORD_REGISTER_SECOND_SENT;
-		textIO.inputDisable();
-	}
-	
-	PASSWORD_ENTER(salt){
-		this.state = StateBase.PASSWORD_ENTER;
-		this.salt = salt;
-		textIO.inputModePassword();
-		textIO.inputEnable();
-		textIO.inputFocus();
-	}
-	
-	PASSWORD_SENT(){
-		this.state = StateBase.PASSWORD_SENT;
-		textIO.inputDisable();
-	}
-	
-	AUTHORIZED(){
-		this.state = StateBase.AUTHORIZED;
-		textIO.inputModeNormal();
-		textIO.inputEnable();
-		textIO.inputFocus();
-	}
-	
-	AUTHORIZATION_FAILED(){
-		this.state = StateBase.AUTHORIZATION_FAILED;
-		textIO.inputDisable();
-		textIO.inputModeNormal();
-	}
-	
-	get(){
-		return state;
-	}
-};
+State.prototype.CONNECTING = function(){
+	this.state = StateBase.CONNECTING;
+	serverDataHide();
+	serverAddress = document.getElementById("server_address").value;
+	serverPort = document.getElementById("server_port").value;
+	textIO.addLine("Connecting to " + serverAddress + ":" + serverPort + "...");
+}
+
+State.prototype.CONNECTION_LOST = function(){
+	this.state = StateBase.CONNECTION_LOST;
+	textIO.inputModeNormal();
+	textIO.inputDisable();
+}
+
+State.prototype.WAIT_RECONNECT = function(){
+	this.state = StateBase.WAIT_RECONNECT;
+	textIO.addLine("Press Enter to try to connect again.");
+	textIO.inputModeNormal();
+	textIO.inputDisable();
+	serverDataShow();
+}
+
+State.prototype.NICKNAME_ENTER = function(){
+	this.state = StateBase.NICKNAME_ENTER;
+	textIO.addLine("Please enter nickname.");
+	textIO.inputModeNormal();
+	textIO.inputEnable();
+	textIO.inputFocus();
+}
+
+State.prototype.NICKNAME_SENT = function(){
+	this.state = StateBase.NICKNAME_SENT;
+	textIO.inputDisable();
+}
+
+State.prototype.PASSWORD_REGISTER_FIRST_ENTER = function(){
+	this.state = StateBase.PASSWORD_REGISTER_FIRST_ENTER;
+	textIO.inputModePassword();
+	textIO.inputEnable();
+	textIO.inputFocus();
+}
+
+State.prototype.PASSWORD_REGISTER_FIRST_SENT = function(){
+	this.state = StateBase.PASSWORD_REGISTER_FIRST_SENT;
+	textIO.inputDisable();
+}
+
+State.prototype.PASSWORD_REGISTER_SECOND_ENTER = function(salt){
+	this.state = StateBase.PASSWORD_REGISTER_SECOND_ENTER;
+	this.salt = salt;
+	textIO.inputModePassword();
+	textIO.inputEnable();
+	textIO.inputFocus();
+}
+
+State.prototype.PASSWORD_REGISTER_SECOND_SENT = function(){
+	this.state = StateBase.PASSWORD_REGISTER_SECOND_SENT;
+	textIO.inputDisable();
+}
+
+State.prototype.PASSWORD_ENTER = function(salt){
+	this.state = StateBase.PASSWORD_ENTER;
+	this.salt = salt;
+	textIO.inputModePassword();
+	textIO.inputEnable();
+	textIO.inputFocus();
+}
+
+State.prototype.PASSWORD_SENT = function(){
+	this.state = StateBase.PASSWORD_SENT;
+	textIO.inputDisable();
+}
+
+State.prototype.AUTHORIZED = function(){
+	this.state = StateBase.AUTHORIZED;
+	textIO.inputModeNormal();
+	textIO.inputEnable();
+	textIO.inputFocus();
+}
+
+State.prototype.AUTHORIZATION_FAILED = function(){
+	this.state = StateBase.AUTHORIZATION_FAILED;
+	textIO.inputDisable();
+	textIO.inputModeNormal();
+}
+
+State.prototype.get = function(){
+	return state;
+}
 
 let state;
 
