@@ -115,7 +115,7 @@ TextIO.prototype.scrollOutputToBottom = function(){
 	if(this.output.scrollBy) //Check if browser supports it
 		this.output.scrollBy(0, 100000000); //This is a big number
 	else
-		this.ouput.scrollTop = 100000000;
+		this.output.scrollTop = 100000000;
 }
 
 TextIO.prototype.outputAppend = function(element){
