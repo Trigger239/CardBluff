@@ -153,25 +153,23 @@ TextIO.prototype.addLineColored = function(str){
 		i = j + 1;
 		
 		for(var k = 0; k < card_number; k++){
-			j = str.indexOf(":", i);
-			
-			if(j == -1){
-				if(k != card_number - 1)
-					return false;
-				else
-					j = str.length;
-			}
-			
-			var comma = str.indexOf(",", i);
-			if(comma == -1 || comma >= j)
+			if(str[i + 1] != ",")
 				return false;
-			var suit = parseInt(str.substr(i, comma));
+			
+			var suit = parseInt(str.substr(i, i +1));
 			if(isNaN(suit))
 				return false;
-			var value = str[comma + 1];
+			var value = str[i + 2];
 			cards.push({suit: suit, value: value});
 			
-			i = j + 1;
+			if(k != card_number - 1){
+				if(str[i + 3] != ":")
+					return false;
+				i += 4;
+			}
+			else{
+				i += 3;
+			}			
 		}
 
 		str = str.substr(i);

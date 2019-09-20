@@ -330,14 +330,14 @@ void Game::make_move(Command cmd){
         else if (union_of_cards.check_combination(current_combination))
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", этой комбинации здесь нет."); // TODO: ENGLISH
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", это не лучшая комбинация."); // TODO: ENGLISH
             player_loses_round(current_move);
         }
         else
         {
             //push_client_string_to_client(cws, client, get_currently_not_moving_player());
-            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", это не лучшая комбинация."); // TODO: ENGLISH
-                                                                                                                    // TODO: Write the best combination
+            push_string_to_both(SERVER_PREFIX L" " + client->get_nickname_with_color() + L", этой комбинации здесь нет."); // TODO: ENGLISH
+            // TODO: Write the best combination
             player_loses_round(current_move);
         }
     }
@@ -459,7 +459,7 @@ wstring Game::cards_to_string(vector<CARD_TYPE> &cards){
   wchar_t str[BUFFER_SIZE];
   wchar_t* ptr = str;
   swprintf(ptr, CARDS_PREFIX L"%u", (unsigned) cards.size());
-  ptr += 7;
+  ptr += wcslen(ptr);
   for(int i = 0; i < ((int)(cards.size())); i++){
     CARD_TYPE value = cards[i] / 4;
     CARD_TYPE suit = cards[i] % 4;

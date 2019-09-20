@@ -268,7 +268,7 @@ function validate_nickname(str){
 
 function validate_password(str){
 	if(str.length < PASSWORD_SIZE_MIN){
-		textIO.addLineColored(ERROR_PREFIX + " Password should contain at least " + PASWORD_SIZE_MIN + " characters!");
+		textIO.addLineColored(ERROR_PREFIX + " Password should contain at least " + PASSWORD_SIZE_MIN + " characters!");
 		textIO.addLine("Please try again.");
 		return false;		
 	}
@@ -293,21 +293,21 @@ function inputHandler(str){
 		if(!validate_password(str))
 			return;
 				
-		sendStringToServer("password_first:" + sha256(str));
+		sendStringToServer("password_first:" + forge_sha256(str));
 		state.PASSWORD_REGISTER_FIRST_SENT();
 	}
 	else if(st == StateBase.PASSWORD_REGISTER_SECOND_ENTER){
 		if(!validate_password(str))
 			return;
 		
-		sendStringToServer("password_second:" + sha256(sha256(str) + state.salt));
+		sendStringToServer("password_second:" + forge_sha256(forge_sha256(str) + state.salt));
 		state.PASSWORD_REGISTER_SECOND_SENT();
 	}
 	else if(st == StateBase.PASSWORD_ENTER){
 		if(!validate_password(str))
 			return;				
 		
-		sendStringToServer("password:" + sha256(sha256(str) + state.salt));
+		sendStringToServer("password:" + forge_sha256(forge_sha256(str) + state.salt));
 		state.PASSWORD_SENT();
 	}
 	else if(st == StateBase.AUTHORIZED){

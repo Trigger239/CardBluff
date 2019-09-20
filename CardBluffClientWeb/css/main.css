@@ -128,8 +128,14 @@ body {
   border: 2px solid white;
   border-radius: 5px;
   padding: 5px;
-  background-color: rgb(0, 0, 0);
-  opacity: 0.8;
+  background:rgb(0,0,0);
+  background: transparent\9;
+  background:rgba(0,0,0,0.8);
+  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#66000000,endColorstr=#66000000);
+  zoom: 1;
+}
+.server_data_wrapper:nth-child(n) {
+    filter: none;
 }
 
 #server_address, #server_port {
