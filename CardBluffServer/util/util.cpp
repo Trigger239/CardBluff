@@ -5,6 +5,7 @@
 
 #include "unicode.h"
 #include "date.h"
+#include "../common.h"
 
 const long long BASE = 10;
 std::string ll_to_string(long long a, bool plus_sign)
@@ -71,4 +72,8 @@ std::wstring escape_special_chars(const std::wstring& str){
     res += c;
   }
   return res;
+}
+
+std::wstring color_that_thing(const std::wstring& str){
+  return COLOR_ESCAPE + str + COLOR_ESCAPE;
 }

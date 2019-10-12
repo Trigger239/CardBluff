@@ -86,3 +86,24 @@ int db_set_rating(sqlite3*db, long long id, long long rating,
   sprintf(cmd, "UPDATE clients SET rating=%I64d WHERE id=%I64d;", rating, id);
   return sqlite3_exec(db, cmd, NULL, nullptr, z_err_msg);
 }
+
+int db_get_top_cb(void* top, int columns, char** values, char** names){
+  if((columns != 2) || (names == NULL) ||
+     (names[0] == NULL) || strcmp(names[0], "nickname") ||
+     (names[1] == NULL) || strcmp(names[1], "rating"))
+    return -1;
+  long long rating;
+  if(sscanf(values[1], "%I64d", &rating) != 1)
+    return -1;
+  ((std::vector<std::pair<std::wstring, long long>>*) top)->
+    emplace_back(converter.from_bytes(values[0]), rating);
+  return 0;
+}
+
+int db_get_top(sqlite3* db, unsigned int n,
+               std::vector<std::pair<std::wstring, long long>>& top,
+               char** z_err_msg){
+  char cmd[256];
+  sprintf(cmd, "SELECT nickname, rating FROM clients ORDER BY rating DESC LIMIT %u;", n);
+  return sqlite3_exec(db, cmd, db_get_top_cb, &top, z_err_msg);
+}

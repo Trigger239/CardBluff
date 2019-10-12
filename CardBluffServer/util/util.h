@@ -13,5 +13,6 @@ std::wstring ptr_to_wstring(void* ptr);
 std::wstring time_to_wstring(std::chrono::high_resolution_clock::time_point t = std::chrono::high_resolution_clock::now());
 std::wstring remove_space_characters(const std::wstring& str);
 std::wstring escape_special_chars(const std::wstring& str);
+std::wstring color_that_thing(const std::wstring& str);
 
 #endif // UTIL_H_INCLUDED

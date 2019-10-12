@@ -25,6 +25,9 @@
 
 //#define SEND_COMMANDS_WHILE_OTHERS_MOVE
 
+#define TOP_LINES_MAX 100
+#define TOP_LINES_DEFAULT 10
+
 #include "util/util.h"
 
 #endif // COMMON_H

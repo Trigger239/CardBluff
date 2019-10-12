@@ -2,7 +2,7 @@
 
 const unsigned int COMBINATION_SIZE[] =
 {
-    1,  // NOTHING
+  1,  // NOTHING
 	2,  // HIGH_CARD
 	2,  // PAIR
 	3,  // TWO_PAIRS

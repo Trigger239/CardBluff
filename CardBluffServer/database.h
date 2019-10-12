@@ -2,6 +2,7 @@
 #define DATABASE_H
 
 #include <string>
+#include <vector>
 #include "sqlite/sqlite3.h"
 #include "common.h"
 
@@ -15,5 +16,8 @@ int db_get_rating(sqlite3* db, long long id, long long* rating,
                   char** z_err_msg);
 int db_set_rating(sqlite3*db, long long id, long long rating,
                   char** z_err_msg);
+int db_get_top(sqlite3* db, unsigned int n,
+               std::vector<std::pair<std::wstring, long long>>& top,
+               char** z_err_msg);
 
 #endif // DATABASE_H

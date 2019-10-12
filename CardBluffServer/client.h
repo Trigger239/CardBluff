@@ -5,6 +5,7 @@
 #include <winsock.h>
 #include <queue>
 #include <string>
+#include <vector>
 #include "common.h"
 #include "game.h"
 
@@ -77,6 +78,7 @@ public:
   int send_data(const char* data, int data_size, bool* _terminate = nullptr);
 
   void push_string(std::wstring str);
+  void push_strings(const std::vector<std::wstring>& str);
   void push_string_format(const wchar_t* format, ...);
   bool queue_is_empty(bool* _terminate = nullptr);
   int send_from_queue(bool* _terminate = nullptr);

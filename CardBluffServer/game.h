@@ -36,6 +36,7 @@ enum RoundResult{
 
 typedef enum{
   MOVE_COMMAND,
+  RECONNECT,
   DISCONNECT,
 } command_type_t;
 
@@ -62,6 +63,7 @@ public:
   ~Game();
 
   void push_command(Client* client, const wstring& command);
+  void push_reconnect(Client* client);
   void push_disconnect(Client* client);
 
   //This should be called from special game thread
@@ -120,6 +122,7 @@ private:
   mt19937 gnr;
   vector<int> current_combination;
   Logger logger;
+  wstring last_move;
 
   vector<uint8_t> generate_shuffled_array_of_cards();
   void generate_cards();
@@ -140,11 +143,14 @@ private:
   uint8_t game_result() const;
   void report_round_results(const RoundResult& res);
   void send_card_numbers_to_both_players(const RoundResult& res);
-  void push_client_string_to_both(const wstring &str, Client* cl);
+  void push_client_string_to_both(const wstring &str, Client* cl = nullptr);
+  void push_client_strings_to_both(const vector<wstring> &str, Client* cl = nullptr);
   void push_client_string_to_client(const wstring &str, Client* receiver, Client* sender = nullptr);
+  void push_client_strings_to_client(const vector<wstring> &str, Client* receiver, Client* sender = nullptr);
   void send_card_messages_to_one_player(Client* client);
   void push_string_to_both(const wstring &str);
-  void send_card_numbers_to_one_player(Client* client, const wstring& zero_line, const wstring& first_line, const wstring& second_line);
+  void push_strings_to_both(const vector<wstring> &str);
+  void send_card_numbers_to_one_player(Client* client);
   double get_remaining_move_time(chrono::high_resolution_clock::time_point now = chrono::high_resolution_clock::now());
 };
 

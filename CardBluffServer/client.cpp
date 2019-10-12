@@ -170,6 +170,14 @@ void Client::push_string(std::wstring str){
   ReleaseMutex(send_queue_mutex);
 }
 
+void Client::push_strings(const std::vector<std::wstring>& str){
+  WaitForSingleObject(send_queue_mutex, INFINITE);
+  for(std::wstring s: str){
+    send_queue.push(s);
+  }
+  ReleaseMutex(send_queue_mutex);
+}
+
 void Client::push_string_format(const wchar_t* format, ...){
   va_list va;
   wchar_t c_str[1024];
@@ -258,7 +266,7 @@ std::wstring Client::get_nickname(){
 
 std::wstring Client::get_nickname_with_color()
 {
-    return wstring(COLOR_ESCAPE + get_nickname() + COLOR_ESCAPE);
+    return color_that_thing(get_nickname());
 }
 
 void Client::set_id(long long _id){

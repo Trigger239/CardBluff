@@ -299,6 +299,9 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
 
       if(WaitForSingleObject(client->get_reconnect_event(), RECONNECT_TIMEOUT) == WAIT_OBJECT_0){
         logger(L"Reconnected");
+        if(client->get_in_game()){
+          client->get_game()->push_reconnect(client);
+        }
         skip_processing = true;
       }
       else{
@@ -324,7 +327,8 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
         return 0;
       }
 
-      switch(client->get_state()){
+      ClientState state = client->get_state();
+      switch(state){
       case WAIT_NICKNAME:
         if(wcsncmp(receive_buffer.c_str(), L"nickname:", 9) == 0){
           logger << L"Nickname received: " << (receive_buffer.c_str() + 9) << Logger::endline;
@@ -538,44 +542,80 @@ DWORD WINAPI client_to_server(LPVOID lpParam){
         break;
 
       case WAIT_ENTER_GAME:
-        if(wcsncmp(receive_buffer.c_str(), L"/", 1) != 0){
-          client->push_string(SERVER_PREFIX L" You should find an opponent to use chat.");
-        }
-        else if(wcscmp(receive_buffer.c_str(), L"/findduel") == 0 || wcscmp(receive_buffer.c_str(), L"/fd") == 0){
-          logger(L"Finding opponent...");
-          client->set_finding_duel(true);
-          client->push_string(SERVER_PREFIX L" Finding an opponent for you...");
-          client->set_state(WAIT_OPPONENT);
-        }
-        else{
-          client->push_string(SERVER_PREFIX L" Invalid command!");
-        }
-        break;
-
       case WAIT_OPPONENT:
-        if(wcsncmp(receive_buffer.c_str(), L"/", 1) != 0){
-          client->push_string(SERVER_PREFIX L" You should find an opponent to use chat.");
-        }
-        else if(remove_space_characters(receive_buffer) == L"/cancel"){
-          logger(L"Opponent finding canceled");
-          client->set_finding_duel(false);
-          client->push_string(SERVER_PREFIX L" Duel finding canceled.");
-          client->set_state(WAIT_ENTER_GAME);
-        }
-        break;
-
       case IN_GAME:
-        if(wcsncmp(remove_space_characters(receive_buffer).c_str(), L"/", 1) != 0){ //not a command
-          client->get_opponent()->push_string(USER_PREFIX + client->get_nickname_with_color() + L": " +  receive_buffer);
+        if(wcsncmp(receive_buffer.c_str(), L"/", 1) != 0){ //not a command
+          if(state != IN_GAME){
+            client->push_string(SERVER_PREFIX L" You should find an opponent to use chat.");
+          }
+          else{
+            client->get_opponent()->push_string(USER_PREFIX + client->get_nickname_with_color() + L": " +  receive_buffer);
+          }
         }
-        else if(wcscmp(receive_buffer.c_str(), L"/help") == 0){
+        else if(receive_buffer == L"/findduel" || receive_buffer == L"/fd"){
+          switch(state){
+          case WAIT_ENTER_GAME:
+            logger(L"Finding opponent...");
+            client->set_finding_duel(true);
+            client->push_string(SERVER_PREFIX L" Finding an opponent for you...");
+            client->set_state(WAIT_OPPONENT);
+            break;
+          case WAIT_OPPONENT:
+            client->push_string(SERVER_PREFIX L" Opponent search is already in progress!");
+            break;
+          case IN_GAME:
+            client->push_string(SERVER_PREFIX L" You are already in game!");
+            break;
+          default:
+            break;
+          }
+        }
+        else if(receive_buffer == L"/cancel"){
+          if(state == WAIT_OPPONENT){
+            logger(L"Opponent finding canceled");
+            client->set_finding_duel(false);
+            client->push_string(SERVER_PREFIX L" Duel finding canceled.");
+            client->set_state(WAIT_ENTER_GAME);
+          }
+          else{
+            client->push_string(SERVER_PREFIX L" Nothing to cancel!");
+          }
+        }
+        else if(wcsncmp(receive_buffer.c_str(), L"/top", 4) == 0){
+          unsigned int n;
+          if(swscanf(receive_buffer.c_str() + 4, L"%u", &n) == 0)
+            n = TOP_LINES_DEFAULT;
+          if(n == 0)
+            n = 1;
+          if(n > TOP_LINES_MAX)
+            n = TOP_LINES_MAX;
+
+          vector<pair<wstring, long long>> top;
+          if(db_get_top(db, n, top, &z_err_msg)){
+            logger << L"Error getting top-" << n << L" from database: " << z_err_msg << Logger::endline;
+            client->push_string(SERVER_PREFIX L" Sorry, something went wrong...");
+          }
+          else{
+            vector<wstring> lines;
+            for(size_t i = 0; i < top.size(); i++){
+              lines.push_back(SERVER_PREFIX L" " + ll_to_wstring(i + 1) + L". " +
+                              color_that_thing(top[i].first) + L" - " +
+                              ll_to_wstring(top[i].second));
+            }
+            client->push_strings(lines);
+          }
+        }
+        else if(receive_buffer == L"/help"){
           client->push_string(SERVER_PREFIX L" Command '/help' is not supported yet.");
         }
-        //TODO: process other non-game commands like /top
-        else{ //game command
-          Game* game = client->get_game();
-          //game->make_move(client, receive_buffer);
-          game->push_command(client, receive_buffer);
+        else{
+          if(state == IN_GAME){ //game command
+            Game* game = client->get_game();
+            game->push_command(client, receive_buffer);
+          }
+          else{
+            client->push_string(SERVER_PREFIX L" Invalid command!");
+          }
         }
         break;
       }

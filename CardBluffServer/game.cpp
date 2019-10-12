@@ -50,6 +50,13 @@ void Game::push_command(Client* client, const wstring& command){
   ReleaseMutex(command_queue_mutex);
 }
 
+void Game::push_reconnect(Client* client){
+  //logger(L"Pushing reconnect event of '" + client->get_nickname() + L"' into queue");
+  WaitForSingleObject(command_queue_mutex, INFINITE);
+  command_queue.emplace(client, L"", current_move, RECONNECT);
+  ReleaseMutex(command_queue_mutex);
+}
+
 void Game::push_disconnect(Client* client){
   //logger(L"Pushing disconnect event of '" + client->get_nickname() + L"' into queue");
   WaitForSingleObject(command_queue_mutex, INFINITE);
@@ -68,9 +75,31 @@ void Game::process(bool* _terminate){
     command_queue.pop();
     ReleaseMutex(command_queue_mutex);
 
+    long long tr;
+    wstring tr_str;
+
     switch(cmd.type){
       case MOVE_COMMAND:
         make_move(cmd);
+        break;
+
+      case RECONNECT:
+        logger(L"Reconnect event of '" + cmd.sender->get_nickname() + L"' found in queue");
+        push_client_string_to_client(L"You are still in game!", cmd.sender);
+        send_card_numbers_to_one_player(cmd.sender);
+        cmd.sender->push_string(cards_to_string(cmd.sender == first_player ?
+                                                first_player_cards : second_player_cards));
+
+        tr = get_remaining_move_time() * 10.0;
+        tr_str = ll_to_wstring(tr / 10) + L"." + ll_to_wstring(tr % 10);
+
+        logger(L"Sending remaining time to '" + cmd.sender->get_nickname() + L"': " + tr_str + L"s");
+
+        if(makes_current_move(cmd.sender))
+          push_client_string_to_client(cmd.sender->get_nickname_with_color() + L", you have " +
+                                       tr_str + L" second" + (tr > 10 ? L"s" : L"") + L" to move.", cmd.sender);
+        else
+          push_client_string_to_client(L"Waiting for your opponent to move...", cmd.sender);
         break;
 
       case DISCONNECT:
@@ -113,11 +142,17 @@ void Game::push_string_to_both(const wstring &str){
   second_player->push_string(str);
 }
 
+void Game::push_strings_to_both(const vector<wstring> &str){
+  first_player->push_strings(str);
+  second_player->push_strings(str);
+}
+
 void Game::start_round(){
   logger(L"Starting new round...");
 
   current_combination.clear();
   current_combination.push_back(NOTHING);
+  last_move = L"";
   alternate_first_move();
   generate_cards();
 
@@ -235,17 +270,37 @@ uint8_t Game::game_result() const
     else
         return SECOND_PLAYER_MOVE;
 }
-// TODO: use everywhere the two following functions
-void Game::push_client_string_to_both(const wstring &str, Client* cl = nullptr)
+// TODO: use everywhere the four following functions
+void Game::push_client_string_to_both(const wstring &str, Client* cl)
 {
     wstring addend = cl ? USER_PREFIX + cl->get_nickname_with_color() + L":" : SERVER_PREFIX;
     push_string_to_both(addend + L" " + str);
 }
+
+void Game::push_client_strings_to_both(const vector<wstring> &str, Client* cl)
+{
+    wstring addend = cl ? USER_PREFIX + cl->get_nickname_with_color() + L":" : SERVER_PREFIX;
+    vector<wstring> buf(str.size());
+    for(size_t i = 0; i < str.size(); i++)
+      buf[i] = addend + L" " + str[i];
+    push_strings_to_both(buf);
+}
+
 void Game::push_client_string_to_client(const wstring &str, Client* receiver, Client* sender)
 {
     wstring addend = sender ? USER_PREFIX + sender->get_nickname_with_color() + L":" : SERVER_PREFIX;
     receiver->push_string(addend + L" " + str);
 }
+
+void Game::push_client_strings_to_client(const vector<wstring> &str, Client* receiver, Client* sender)
+{
+    wstring addend = sender ? USER_PREFIX + sender->get_nickname_with_color() + L":" : SERVER_PREFIX;
+    vector<wstring> buf(str.size());
+    for(size_t i = 0; i < str.size(); i++)
+      buf[i] = addend + L" " + str[i];
+    receiver->push_strings(buf);
+}
+
 void Game::make_move(Command cmd){
   assert(cmd.type == MOVE_COMMAND);
 
@@ -289,6 +344,18 @@ void Game::make_move(Command cmd){
   if(lcws == L"/cards"){
     logger(L"Sending cards to '" + client->get_nickname() + L"'");
     client->push_string(cards_to_string(client == first_player ? first_player_cards : second_player_cards));
+    return;
+  }
+  if(lcws == L"/lastmove" || lcws == L"/lm"){
+    logger(L"Sending last move to '" + client->get_nickname() + L"'");
+    if(last_move == L""){
+      push_client_string_to_client(L"No moves have been made in this round yet.", client);
+    }
+    else{
+      push_client_string_to_client(L"Last move: " + last_move + L" (" +
+                                   get_currently_not_moving_player()->get_nickname_with_color() + L")",
+                                   client);
+    }
     return;
   }
 
@@ -348,7 +415,8 @@ void Game::make_move(Command cmd){
         wstring transcript = Hand::parse_m_command(cws.substr(2, ((int)((cws).size())) - 2), combination);
         if (transcript == L"")
         {
-            push_client_string_to_client(cws.substr(0, 2) + L" " + cws.substr(2, ((int)((cws).size())) - 2), get_currently_not_moving_player(), client);
+            last_move = cws.substr(0, 2) + L" " + cws.substr(2, ((int)((cws).size())) - 2);
+            push_client_string_to_client(last_move, get_currently_not_moving_player(), client);
 
             if (Hand::less_combination(current_combination, combination))
             {
@@ -427,13 +495,16 @@ void Game::finish(const RoundResult& res){
            second_player->get_nickname() + L"'" + ll_to_wstring(-delta, true) +
            L"=" + ll_to_wstring(second_player_rating));
 
-    push_client_string_to_both(L"Ratings:");
-    push_client_string_to_both(first_player->get_nickname_with_color() + L": " +
-                               ll_to_wstring(first_player_rating) + L" (" +
-                               ll_to_wstring(delta, true) + L")");
-    push_client_string_to_both(second_player->get_nickname_with_color() + L": " +
-                               ll_to_wstring(second_player_rating) + L" (" +
-                               ll_to_wstring(-delta, true) + L")");
+    vector<wstring> buf(3);
+    buf[0] = L"Ratings:";
+    buf[1] = first_player->get_nickname_with_color() + L": " +
+             ll_to_wstring(first_player_rating) + L" (" +
+             ll_to_wstring(delta, true) + L")";
+    buf[2] = second_player->get_nickname_with_color() + L": " +
+             ll_to_wstring(second_player_rating) + L" (" +
+             ll_to_wstring(-delta, true) + L")";
+
+    push_client_strings_to_both(buf);
   }
 
   first_player->set_in_game(false);
@@ -498,11 +569,23 @@ void Game::send_card_messages_to_both_players(){
   send_card_messages_to_one_player(first_player);
   send_card_messages_to_one_player(second_player);
 }
-void Game::send_card_numbers_to_one_player(Client* client, const wstring& zero_line, const wstring& first_line, const wstring& second_line)
+void Game::send_card_numbers_to_one_player(Client* client)
 {
-    push_client_string_to_client(zero_line, client);
-    push_client_string_to_client(first_line, client);
-    push_client_string_to_client(second_line, client);
+  logger(L"Sending card numbers to '" + client->get_nickname() + L"'...");
+  std::wstring zero_line, first_line, second_line;
+  zero_line = L"Number of cards:";
+
+  first_line = first_player->get_nickname_with_color() + L": " +
+               ll_to_wstring(first_player_card_number);
+
+  second_line = second_player->get_nickname_with_color() + L": " +
+                ll_to_wstring(second_player_card_number);
+
+  vector<wstring> buf(3);
+  buf[0] = zero_line;
+  buf[1] = first_line;
+  buf[2] = second_line;
+  push_client_strings_to_client(buf, client);
 }
 void Game::send_card_numbers_to_both_players(const RoundResult& res)
 {
@@ -534,8 +617,11 @@ void Game::send_card_numbers_to_both_players(const RoundResult& res)
             second_line += L" :facepalm:";
     }
 
-    send_card_numbers_to_one_player(first_player, zero_line, first_line, second_line);
-    send_card_numbers_to_one_player(second_player, zero_line, first_line, second_line);
+    vector<wstring> buf(3);
+    buf[0] = zero_line;
+    buf[1] = first_line;
+    buf[2] = second_line;
+    push_client_strings_to_both(buf);
 }
 
 void Game::send_card_messages_to_owners(){
