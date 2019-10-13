@@ -63,8 +63,11 @@ extern const vector<bool> IS_STRAIGHT_TYPE;
 extern const vector<bool> IS_FLUSH_TYPE;
 extern const vector<uint8_t> HOW_MANY_RANKS;
 extern const unordered_map<wchar_t, rank_t> WCHAR_TO_RANK;
+extern const vector<wchar_t> RANK_TO_WCHAR;
 extern const unordered_map<wchar_t, suit_t> WCHAR_TO_SUIT;
+extern const vector<wchar_t> SUIT_TO_WCHAR;
 extern const unordered_map<wchar_t, combination_t> WCHAR_TO_COMBINATION;
+extern const vector<wchar_t> COMBINATION_TO_WCHAR;
 
 class Hand
 {
@@ -114,6 +117,7 @@ public:
 	bool is_best_combination(vector<int> comb);
 	static void remove_suit(vector<int>& comb);
 	static wstring parse_m_command(const wstring& command, vector<int>& combination);
+	static wstring format_m_command(const vector<int>& combination);
 	static bool less_combination(vector<int> u, vector<int> v);
 };
 

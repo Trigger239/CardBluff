@@ -2,7 +2,7 @@
 
 const unsigned int COMBINATION_SIZE[] =
 {
-  1,  // NOTHING
+	1,  // NOTHING
 	2,  // HIGH_CARD
 	2,  // PAIR
 	3,  // TWO_PAIRS
@@ -16,7 +16,7 @@ const unsigned int COMBINATION_SIZE[] =
 
 const vector<bool> HAS_SUIT =
 {
-    false,  // NOTHING
+	false,  // NOTHING
 	false,  // HIGH_CARD
 	false,  // PAIR
 	false,  // TWO_PAIRS
@@ -30,7 +30,7 @@ const vector<bool> HAS_SUIT =
 
 const vector<bool> IS_STRAIGHT_TYPE =
 {
-    false,  // NOTHING
+	false,  // NOTHING
 	false,  // HIGH_CARD
 	false,  // PAIR
 	false,  // TWO_PAIRS
@@ -44,7 +44,7 @@ const vector<bool> IS_STRAIGHT_TYPE =
 
 const vector<bool> IS_FLUSH_TYPE =
 {
-    false,  // NOTHING
+	false,  // NOTHING
 	false,  // HIGH_CARD
 	false,  // PAIR
 	false,  // TWO_PAIRS
@@ -59,7 +59,7 @@ const vector<bool> IS_FLUSH_TYPE =
 
 extern const vector<uint8_t> HOW_MANY_RANKS =
 {
-    0,  // NOTHING
+	0,  // NOTHING
 	1,  // HIGH_CARD
 	1,  // PAIR
 	2,  // TWO_PAIRS
@@ -92,12 +92,37 @@ const unordered_map<wchar_t, rank_t> WCHAR_TO_RANK =
     { L'a', ACE },
 };
 
+const vector<wchar_t> RANK_TO_WCHAR =
+{
+    L'2', //TWO
+    L'3', //THREE
+    L'4', //FOUR
+    L'5', //FIVE
+    L'6', //SIX
+    L'7', //SEVEN
+    L'8', //EIGHT
+    L'9', //NINE
+    L'0', //TEN
+    L'j', //JACK
+    L'q', //QUEEN
+    L'k', //KING
+    L'a', //ACE
+};
+
 const unordered_map<wchar_t, suit_t> WCHAR_TO_SUIT =
 {
     { L'0', HEARTS },
     { L'1', DIAMONDS },
     { L'2', SPADES },
     { L'3', CLUBS }
+};
+
+const vector<wchar_t> SUIT_TO_WCHAR =
+{
+    L'0', //HEARTS
+    L'1', //DIAMONDS
+    L'2', //SPADES
+    L'3', //CLUBS
 };
 
 const unordered_map<wchar_t, combination_t> WCHAR_TO_COMBINATION =
@@ -111,6 +136,20 @@ const unordered_map<wchar_t, combination_t> WCHAR_TO_COMBINATION =
     { L'6', FULL_HOUSE},
     { L'7', SQUARE },
     { L'8', STRAIGHT_FLUSH }
+};
+
+const vector<wchar_t> COMBINATION_TO_WCHAR =
+{
+    L'X', //NOTHING
+    L'0', //HIGH_CARD
+    L'1', //PAIR
+    L'2', //TWO_PAIRS
+    L'3', //SET
+    L'4', //STRAIGHT
+    L'5', //FLUSH
+    L'6', //FULL_HOUSE
+    L'7', //SQUARE
+    L'8', //STRAIGHT_FLUSH
 };
 
 Hand::Hand()
@@ -616,6 +655,25 @@ wstring Hand::parse_m_command(const wstring& command, vector<int>& combination)
         sort(combination.begin() + 1, combination.begin() + 3);
 
     return L"";
+}
+
+wstring Hand::format_m_command(const vector<int>& combination){
+  clever_asserts(combination);
+  assert(!is_combination_nothing(combination));
+
+  wstring str = L"/m ";
+  uint8_t comb_type = combination.front();
+  uint8_t number_of_ranks = HOW_MANY_RANKS[comb_type];
+
+  str += COMBINATION_TO_WCHAR[comb_type]; //combination type
+  for(uint8_t i = 0; i < number_of_ranks; i++){
+    str += RANK_TO_WCHAR[combination[i + 1]]; //rank
+  }
+  if(HAS_SUIT[comb_type]){
+    str += SUIT_TO_WCHAR[combination[number_of_ranks + 1]]; //suit
+  }
+
+  return str;
 }
 
 bool Hand::less_combination(vector<int> u, vector<int> v)

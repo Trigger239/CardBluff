@@ -117,6 +117,8 @@ private:
   Hand union_of_cards;
   vector<uint8_t> first_player_cards;
   vector<uint8_t> second_player_cards;
+  bool first_player_wants_tie;
+  bool second_player_wants_tie;
   CurrentMove current_move;
   CurrentMove first_move;
   mt19937 gnr;
