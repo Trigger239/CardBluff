@@ -510,7 +510,8 @@ int output_win_addwstr_colored(const wchar_t* str){
               if(waddwstr(w, SERVER_PREFIX L" ") == ERR) return ERR;
               if(wattroff(w, COLOR_PAIR(COLOR_MESSAGE_SERVER)) == ERR) return ERR;
               if(win_print_with_highlight(w, pref_str) == ERR) return ERR;
-              for(auto card: cards){
+              for(size_t i = 0; i < cards.size(); i++){
+                auto card = cards[i];
                 if(waddnwstr(w, &card.second, 1) == ERR) return ERR;
                 switch(card.first){
                 case HEARTS:
@@ -537,7 +538,8 @@ int output_win_addwstr_colored(const wchar_t* str){
                   if(wattroff(w, COLOR_PAIR(COLOR_CLUBS)) == ERR) return ERR;
                   break;
                 }
-                if(&card != &cards.back()) if(waddwstr(w, L", ") == ERR) return ERR;
+                if(i != cards.size() - 1)
+                  if(waddwstr(w, L", ") == ERR) return ERR;
               }
               if(waddnwstr(w, L"\n", 1) == ERR) return ERR;
               return output_win_refresh(w);
